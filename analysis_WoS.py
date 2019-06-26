@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pyodbc
 import re
+import statsmodels.formula.api as smf
 
 def get_conn():
   conn = pyodbc.connect(
@@ -266,27 +267,68 @@ plt.savefig('../results/inst_corr_vqr.png', dpi=300, transparent=True)
 
 limited_df = pd.merge(df, n_per_institution[n_per_institution >= 1].reset_index(), left_index=True, right_on=['INSTITUTION_ID', 'GEV'])
 
-limited_df = pd.get_dummies(limited_df, prefix=['REV_1', 'REV_2'],
-                            columns=['REV_1_CLASS', 'REV_2_CLASS'], dtype=np.float)
+inst_df = limited_df.groupby(['INSTITUTION_ID', 'GEV', 'GEV_numeric'])\
+                    .aggregate({'REV_1_SCORE': 'mean',
+                                'REV_2_SCORE': 'mean',
+                                'ncs': 'mean',
+                                'njs': 'mean',
+                                'PERCENTILE_CITATIONS': 'mean',
+                                'PERCENTILE_INDICATOR_VALUE': 'mean',
+                                'n_pubs': 'mean'})
+
+
+res_ncs = smf.ols(formula='REV_1_SCORE ~ ncs', data=inst_df).fit()
+res_njs = smf.ols(formula='REV_1_SCORE ~ njs', data=inst_df).fit()
+res_perc_cit = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_CITATIONS', data=inst_df).fit()
+res_perc_ind = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_INDICATOR_VALUE', data=inst_df).fit()
+res_rev_2 = smf.ols(formula='REV_1_SCORE ~ REV_2_SCORE', data=inst_df).fit()
+
+inst_df['pred_ncs'] = res_ncs.predict()
+inst_df['pred_njs'] = res_njs.predict()
+inst_df['pred_perc_cit'] = res_perc_cit.predict(inst_df['PERCENTILE_CITATIONS']) # To account for NA
+inst_df['pred_perc_ind'] = res_perc_ind.predict(inst_df['PERCENTILE_INDICATOR_VALUE']) # To account for NA
+inst_df['pred_rev_2'] = res_rev_2.predict()
+
+inst_df['abs_diff_ncs'] = np.abs(inst_df['pred_ncs'] - inst_df['REV_1_SCORE'])
+inst_df['abs_diff_njs'] = np.abs(inst_df['pred_njs'] - inst_df['REV_1_SCORE'])
+inst_df['abs_diff_perc_cit'] = np.abs(inst_df['pred_perc_cit'] - inst_df['REV_1_SCORE'])
+inst_df['abs_diff_perc_ind'] = np.abs(inst_df['pred_perc_ind'] - inst_df['REV_1_SCORE'])
+inst_df['abs_diff_rev_2'] = np.abs(inst_df['pred_rev_2'] - inst_df['REV_1_SCORE'])
+
+x = inst_df.groupby('GEV').median()[['abs_diff_ncs', 'abs_diff_njs', 'abs_diff_perc_cit', 'abs_diff_perc_ind', 'abs_diff_rev_2']]
+x.sort_values('abs_diff_rev_2').plot()
+
+#%% Take size dependent view
+cols = ['REV_1_SCORE', 'REV_2_SCORE', 'ncs', 'njs',
+        'pred_ncs', 'pred_njs', 'pred_perc_cit', 'pred_perc_ind', 'pred_rev_2']
+inst_size_dep_df = inst_df[cols].copy()
+inst_size_dep_df[cols] = inst_size_dep_df[cols].mul(inst_df['n_pubs'], axis=0)
+
+def abs_perc_diff(x, y):
+  d = np.abs(x - y)/y
+  d[pd.isna(d)] = 0
+  return d
+
+inst_size_dep_df['abs_perc_diff_ncs'] = abs_perc_diff(inst_size_dep_df['pred_ncs'], inst_size_dep_df['REV_1_SCORE'])
+inst_size_dep_df['abs_perc_diff_njs'] = abs_perc_diff(inst_size_dep_df['pred_njs'], inst_size_dep_df['REV_1_SCORE'])
+inst_size_dep_df['abs_perc_perc_cit'] = abs_perc_diff(inst_size_dep_df['pred_perc_cit'], inst_size_dep_df['REV_1_SCORE'])
+inst_size_dep_df['abs_perc_perc_ind'] = abs_perc_diff(inst_size_dep_df['pred_perc_ind'], inst_size_dep_df['REV_1_SCORE'])
+inst_size_dep_df['abs_perc_diff_rev_2'] = abs_perc_diff(inst_size_dep_df['pred_rev_2'], inst_size_dep_df['REV_1_SCORE'])
+
+x = 100*inst_size_dep_df.groupby('GEV').median()[['abs_perc_diff_ncs', 'abs_perc_diff_njs', 'abs_perc_diff_ncs', 'abs_perc_diff_njs', 'abs_perc_diff_rev_2']]
+x.sort_values('abs_perc_diff_rev_2').plot()
 #%%
-total_top_pubs = limited_df.groupby('GEV').sum()[['REV_1_Excellent', 'p_top_prop']]
-
-p_top_per_excellent = total_top_pubs['REV_1_Excellent'] / total_top_pubs['p_top_prop']
-p_top_per_excellent.name = 'p_top_per_excellent'
-
+from causality.inference.search import IC
+from causality.inference.independence_tests import RobustRegressionTest
 #%%
-inst_df = limited_df.groupby(['INSTITUTION_ID', 'GEV', 'GEV_numeric']).sum()
-inst_df = inst_df.sort_index(level='GEV_numeric')
-inst_df = inst_df.join(p_top_per_excellent, on='GEV').reset_index()
-inst_df['predicted_Excellent'] = inst_df['p_top_per_excellent']*inst_df['p_top_prop']
-
-inst_df['predicted_APD'] = np.abs(inst_df['predicted_Excellent'] - inst_df['REV_1_Excellent'])/inst_df['REV_1_Excellent']
-inst_df['predicted_APD'] = inst_df['predicted_APD'].fillna(0)
-
-inst_df['REV_2_APD'] = np.abs(inst_df['REV_2_Excellent'] - inst_df['REV_1_Excellent'])/inst_df['REV_1_Excellent']
-inst_df['REV_2_APD'] = inst_df['REV_2_APD'].fillna(0)
-
-inst_df.groupby('GEV').median()[['predicted_APD', 'REV_2_APD']]
+# run the search
+variable_types = {'REV_1_SCORE': 'c',
+                  'ncs': 'c',
+                  'njs': 'c',
+                  'REV_2_SCORE': 'c'}
+ic_algorithm = IC(RobustRegressionTest)
+#%%
+graph = ic_algorithm.search(df, variable_types)
 #%% Sample size per GEV at institutional level
 n = inst_df.groupby(level=['GEV'], sort=False).size()
 
