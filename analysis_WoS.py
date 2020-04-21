@@ -73,8 +73,11 @@ if conn:
 
 #%%
 
-df = pd.read_csv('../data/WoS_indic.csv', index_col=['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
-
+df = pd.read_csv('../data/WoS_indic.csv')
+df = pd.merge(gev_names_df, df, left_on='GEV_id', right_on='GEV')
+del df['GEV_y']
+df = df.rename(columns={'GEV_x': 'GEV'})
+df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
 #%%
 cols = ['cs', 'ncs', 'p_top_prop', 
         'CITATIONS_NUMBER', 'PERCENTILE_CITATIONS',         
@@ -85,7 +88,7 @@ cols = ['cs', 'ncs', 'p_top_prop',
 #%% Correlation at individual levels (overall)
 corr_individual = df[cols].corr('spearman')
 #%% Calculate outcome results on institutional level  (overall)
-inst_df = df[cols].groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).mean()
+inst_df = df[cols].groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).mean().reset_index()
 
 #%% #%% Sample size per GEV per institutions
 n_per_institution = df.groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).size()
@@ -97,14 +100,15 @@ for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
-  ax.plot(gev_df['REV_1_SCORE'], gev_df['njs'], '.', alpha=0.5, mew=0)
+  ax.plot(gev_df['REV_1_SCORE'], gev_df['ncs'], '.', alpha=0.5, mew=0)
   
   ax.set_yscale('log')  
   if (row == 2):
       if (col == 0):
-          ax.set_xticks([0, 30])
+          ax.set_xticks([0, 10, 20, 30])
       else:
-          ax.set_xticks([30])
+          ax.set_xticks([10, 20, 30])
+      ax.tick_params(axis='x', which='both', direction='in', left=True, bottom=True)
   else:
       ax.set_xticks([])
 
@@ -113,12 +117,13 @@ for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
           ax.set_yticks([0.1, 10])
       else:
           ax.set_yticks([10])
+      ax.tick_params(axis='y', which='both', direction='in', left=True, bottom=True)
   else:
       ax.set_yticks([])
   
-  ax.set_xlim(0, 30)
+  ax.set_xlim(0, 35)
   ax.set_ylim(0.1, 20)
-  ax.text(0.05, 0.9, '{0}'.format(gev), transform=ax.transAxes, ha='left', va='baseline')  
+  ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')  
     
 axs[2][3].set_xticks([])
 axs[2][3].set_yticks([])
@@ -126,8 +131,8 @@ axs[2][3].set_yticks([])
 fig.subplots_adjust(hspace=0,wspace=0)
 
 fig.text(0.5, 0.05, 'Reviewer 1 score', ha='center')
-fig.text(0.05, 0.5, 'NJS', va='center', rotation='vertical')
-fig.savefig('../results/scatter_pub_njs.pdf')
+fig.text(0.05, 0.5, 'NCS', va='center', rotation='vertical')
+fig.savefig('../results/scatter_pub_ncs.pdf')
 #%% Scatter plot at individual level (reviewer individual level)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
 for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
@@ -138,22 +143,24 @@ for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
     
   if (row == 2):
       if (col == 0):
-          ax.set_xticks([0, 30])
+          ax.set_xticks([0, 10, 20, 30])
       else:
-          ax.set_xticks([30])
+          ax.set_xticks([10, 20, 30])
+      ax.tick_params(axis='x', which='both', direction='in', left=True, bottom=True)          
   else:
       ax.set_xticks([])
 
   if (col == 0):
       if (row == 2):
-          ax.set_yticks([0, 30])
+          ax.set_yticks([0, 10, 20, 30])
       else:
-          ax.set_yticks([30])
+          ax.set_yticks([10, 20, 30])
+      ax.tick_params(axis='y', which='both', direction='in', left=True, bottom=True)          
   else:
       ax.set_yticks([])
   
-  ax.set_xlim(0, 30)
-  ax.set_ylim(0, 30)
+  ax.set_xlim(0, 35)
+  ax.set_ylim(0, 35)
   ax.text(0.05, 0.9, '{0}'.format(gev), transform=ax.transAxes, ha='left', va='baseline')  
     
 axs[2][3].set_xticks([])
@@ -238,6 +245,43 @@ def bootstrap_MAD_MAPD_inst(df, N):
 #%%
 min_n_per_institution = 1
 limited_df = pd.merge(df.reset_index(), n_per_institution[n_per_institution >= min_n_per_institution].reset_index(), on=['INSTITUTION_ID', 'GEV'])
+
+#%%
+
+inst_gev_df = limited_df.groupby(['INSTITUTION_ID', 'GEV', 'GEV_numeric'])\
+                    .aggregate({'REV_1_SCORE': 'mean',
+                                'REV_2_SCORE': 'mean',
+                                'ncs': 'mean',
+                                'njs': 'mean',
+                                'PERCENTILE_CITATIONS': 'mean',
+                                'PERCENTILE_INDICATOR_VALUE': 'mean',
+                                'n_pubs': 'mean'})  
+
+def percentile(n):
+  def percentile_(x):
+    if not isinstance(x,pd.Series):
+      raise ValueError('need Series argument')
+    return np.percentile(x, n)
+  percentile_.__name__ = 'percentile_%s' % n
+  return percentile_
+
+GEV_df = inst_gev_df.groupby('GEV').aggregate([percentile(2.5), percentile(50), percentile(97.5)])
+GEV_df = pd.merge(gev_names_df, GEV_df, left_on='GEV_id', right_index=True)
+#%%
+x = np.arange(GEV_df.shape[0])
+y = GEV_df[('n_pubs', 'percentile_50')]
+ybounds = GEV_df[[('n_pubs', 'percentile_2.5'), ('n_pubs', 'percentile_97.5')]]
+ax = fig.add_subplot(1, 3, 1)
+
+plt.bar(x, y)
+plt.errorbar(x=x, y=y, fmt='none', lw=1,
+             yerr=np.abs(ybounds.subtract(y, axis='index').values.T),
+             alpha=0.3)
+plt.ylim(0, 30)
+plt.xticks(x, GEV_df['GEV'], rotation=45, ha='right')
+plt.savefig('../results/field_n_pubs.pdf', bbox_inches='tight')
+plt.savefig('../results/field_n_pubs.png', dpi=300, bbox_inches='tight')
+
 #%%
 MAD_MAPD_bootstrap = list(bootstrap_MAD_MAPD_inst(limited_df, N=1000))
 #%%
@@ -438,46 +482,9 @@ sns.despine()
 plt.savefig('../results/MAD_ind.pdf', bbox_inches='tight')
 plt.savefig('../results/MAD_ind.png', dpi=300, bbox_inches='tight')
    
-#%% Scatter plot at institutional level (njs)
-fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(inst_df.groupby(level='GEV', sort=False)):
-  row = int(idx / 4)
-  col = idx % 4
-  ax = axs[row][col]
-  ax.plot(gev_df['REV_1_SCORE'], gev_df['njs'], '.', alpha=0.5, mew=0)
-  
-  ax.set_yscale('log')
-  if (row == 2):
-      if (col == 0):
-          ax.set_xticks([0, 30])
-      else:
-          ax.set_xticks([30])
-  else:
-      ax.set_xticks([])
-
-  if (col == 0):
-      if (row == 2):
-          ax.set_yticks([0.1, 10])
-      else:
-          ax.set_yticks([10])
-  else:
-      ax.set_yticks([])
-  
-  ax.set_xlim(0, 30)
-  ax.set_ylim(0.1, 20)
-  ax.text(0.05, 0.9, '{0}'.format(gev), transform=ax.transAxes, ha='left', va='baseline')  
-    
-axs[2][3].set_xticks([])
-axs[2][3].set_yticks([])
-  
-fig.subplots_adjust(hspace=0,wspace=0)
-
-fig.text(0.5, 0.05, 'Reviewer 1 score', ha='center')
-fig.text(0.05, 0.5, 'NJS', va='center', rotation='vertical')
-fig.savefig('../results/scatter_inst_njs.pdf')
 #%% Scatter plot at institutional level (ncs)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(inst_df.groupby(level='GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
@@ -486,23 +493,23 @@ for idx, (gev, gev_df) in enumerate(inst_df.groupby(level='GEV', sort=False)):
   ax.set_yscale('log')  
   if (row == 2):
       if (col == 0):
-          ax.set_xticks([0, 30])
+          ax.set_xticks([0, 10, 20, 30])
       else:
-          ax.set_xticks([30])
+          ax.set_xticks([10, 20, 30])
+      ax.tick_params(axis='x', which='both', direction='in', left=True, bottom=True)          
   else:
       ax.set_xticks([])
 
+  ax.set_xlim(0, 35)
+  ax.set_ylim(0.02, 200)
+
   if (col == 0):
-      if (row == 2):
-          ax.set_yticks([0.1, 10])
-      else:
-          ax.set_yticks([10])
+      ax.set_yticks([1e-1, 1e0, 1e1, 1e2])
+      ax.tick_params(axis='y', which='both', direction='in', left=True, bottom=True)
   else:
       ax.set_yticks([])
-  
-  ax.set_xlim(0, 30)
-  ax.set_ylim(0.05, 50)
-  ax.text(0.05, 0.9, '{0}'.format(gev), transform=ax.transAxes, ha='left', va='baseline')  
+    
+  ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')  
     
 axs[2][3].set_xticks([])
 axs[2][3].set_yticks([])
@@ -511,34 +518,38 @@ fig.subplots_adjust(hspace=0,wspace=0)
 
 fig.text(0.5, 0.05, 'Reviewer 1 score', ha='center')
 fig.text(0.05, 0.5, 'NCS', va='center', rotation='vertical')
-fig.savefig('../results/scatter_inst_ncs.pdf')
-#%% Scatter plot at institutional level (reviewer uncertainty)
+fig.savefig('../results/scatter_inst_ncs.pdf', bbox_inches='tight')
+fig.savefig('../results/scatter_inst_ncs.png', dpi=300, bbox_inches='tight')
+#%% Scatter plot at institutional level (ncs)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(inst_df.groupby(level='GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
   ax.plot(gev_df['REV_1_SCORE'], gev_df['REV_2_SCORE'], '.', alpha=0.5, mew=0)
-    
+  
   if (row == 2):
       if (col == 0):
-          ax.set_xticks([0, 30])
+          ax.set_xticks([0, 10, 20, 30])
       else:
-          ax.set_xticks([30])
+          ax.set_xticks([10, 20, 30])
+      ax.tick_params(axis='x', which='both', direction='in', left=True, bottom=True)          
   else:
       ax.set_xticks([])
 
+  ax.set_xlim(0, 35)
+  ax.set_ylim(0, 35)
+
   if (col == 0):
       if (row == 2):
-          ax.set_yticks([0, 30])
+          ax.set_yticks([0, 10, 20, 30])
       else:
-          ax.set_yticks([30])
+          ax.set_yticks([10, 20, 30])
+      ax.tick_params(axis='y', which='both', direction='in', left=True, bottom=True)
   else:
       ax.set_yticks([])
-  
-  ax.set_xlim(0, 30)
-  ax.set_ylim(0, 30)
-  ax.text(0.05, 0.9, '{0}'.format(gev), transform=ax.transAxes, ha='left', va='baseline')  
+    
+  ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')  
     
 axs[2][3].set_xticks([])
 axs[2][3].set_yticks([])
@@ -547,4 +558,5 @@ fig.subplots_adjust(hspace=0,wspace=0)
 
 fig.text(0.5, 0.05, 'Reviewer 1 score', ha='center')
 fig.text(0.05, 0.5, 'Reviewer 2 score', va='center', rotation='vertical')
-fig.savefig('../results/scatter_inst_reviewer_uncertainty.pdf')
+fig.savefig('../results/scatter_inst_reviewer_uncertainty.pdf', bbox_inches='tight')
+fig.savefig('../results/scatter_inst_reviewer_uncertainty.png', dpi=300, bbox_inches='tight')
