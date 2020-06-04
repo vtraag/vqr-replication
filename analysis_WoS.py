@@ -510,9 +510,11 @@ for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
       ax.set_yticks([])
     
   ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')  
-    
-axs[2][3].set_xticks([])
-axs[2][3].set_yticks([])
+
+ax = axs[2][3]
+ax.set_xlim(0, 35)    
+ax.set_xticks([10, 20, 30])
+ax.set_yticks([])
   
 fig.subplots_adjust(hspace=0,wspace=0)
 
@@ -551,9 +553,11 @@ for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
     
   ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')  
     
-axs[2][3].set_xticks([])
-axs[2][3].set_yticks([])
-  
+ax = axs[2][3]
+ax.set_xlim(0, 35)    
+ax.set_xticks([10, 20, 30])
+ax.set_yticks([])
+
 fig.subplots_adjust(hspace=0,wspace=0)
 
 fig.text(0.5, 0.05, 'Reviewer 1 score', ha='center')
