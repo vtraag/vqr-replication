@@ -73,6 +73,22 @@ if conn:
 
 #%%
 
+stratification_df = pd.read_excel('../data/dati_leida_campione.xlsx')
+stratification_df = stratification_df[stratification_df['Typology'] == 'U']
+#%%
+
+plt.figure(figsize=(4, 3))
+bins = np.linspace(0, 15, 16)
+plt.hist(stratification_df['WoS_Universe'], 
+         bins=bins, color=colors[1],histtype='stepfilled')
+plt.grid(axis='y', ls=':')
+plt.ylabel('Frequency')
+plt.xlabel('Sample %')
+sns.despine()
+plt.savefig('../results/stratification.pdf', bbox_inches='tight')
+#%%
+missing_uni_df = stratification_df.query('WoS_Leiden_sample == 0')
+#%%
 df = pd.read_csv('../data/WoS_indic.csv')
 df = pd.merge(gev_names_df, df, left_on='GEV_id', right_on='GEV')
 del df['GEV_y']
