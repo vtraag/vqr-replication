@@ -76,14 +76,14 @@ if conn:
 
 #%%
 np.random.seed(0)
-min_n_per_institution = 1
+min_n_per_institution = 5
 
 data_type = 'universities' # all | universities
 
 results_dir = '../results/min={min}/{data}/'.format(min=min_n_per_institution, data=data_type)
 if not os.path.exists(results_dir):
   os.makedirs(results_dir)
-  
+
 #%% Read data
 df = pd.read_csv('../data/WoS_indic.csv')
 if data_type == 'universities':
@@ -219,7 +219,7 @@ def calc_MAD_and_MAPD_inst(df):
   MADs = []
   MAPDs = []
   for GEV_id, GEV_df in inst_df.groupby('GEV_id'):
-    
+
     res_ncs = smf.ols(formula='REV_1_SCORE ~ ncs', data=GEV_df).fit()
     res_njs = smf.ols(formula='REV_1_SCORE ~ njs', data=GEV_df).fit()
 
