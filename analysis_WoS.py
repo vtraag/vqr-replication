@@ -48,6 +48,7 @@ if conn:
     """;
   df = pd.io.sql.read_sql(sql, conn);
   conn.close()
+
   # Randomly pick either reviewer 1 or reviewer 2 as reviewer 1.
   np.random.seed(0)
   df['reviewer'] = np.random.randint(1, 3, size=df.shape[0])
@@ -55,22 +56,16 @@ if conn:
   rev_2_cols = [c for c in df.columns if 'REV_2' in c]
   df[rev_1_cols + rev_2_cols] = df[rev_1_cols + rev_2_cols].where(
                                   df['reviewer'] == 1,
-                                  df[rev_1_cols + rev_2_cols]);
-
-  # Limit to universities
-  #df = df[df['INSTITUTION_TYPE'] == 'U']
-
-  # Limit to only WoS publications
-  #df = df[df['USED_DB'] == 'WoS']
+                                  df[rev_2_cols + rev_1_cols].values)
 
   df['GEV_numeric'] = df['GEV'].apply(lambda x: int(re.match(r'\d*', x)[0]))
   df = df.set_index(['INSTITUTION_ID', 'GEV']);
 
   df = df.sort_values('GEV_numeric')
 
-  df['REV_1_SCORE'] = df[['REV_1_ORIGINALITY', 'REV_1_RIGOR', 'REV_1_IMPACT']].sum(axis=1)
-  df['REV_2_SCORE'] = df[['REV_2_ORIGINALITY', 'REV_2_RIGOR', 'REV_2_IMPACT']].sum(axis=1)
-  df['REV_SCORE'] = df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
+  df['REV_1_SCORE'] = df[['REV_1_ORIGINALITY', 'REV_1_RIGOR', 'REV_1_IMPACT']].sum(axis=1, skipna=False)
+  df['REV_2_SCORE'] = df[['REV_2_ORIGINALITY', 'REV_2_RIGOR', 'REV_2_IMPACT']].sum(axis=1, skipna=False)
+  df['REV_SCORE'] = df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1, skipna=False)
 
   df.to_csv('../data/WoS_indic.csv')
 
@@ -78,7 +73,7 @@ if conn:
 np.random.seed(0)
 min_n_per_institution = 5
 
-data_type = 'universities' # all | universities
+data_type = 'all' # all | universities
 
 results_dir = '../results/min={min}/{data}/'.format(min=min_n_per_institution, data=data_type)
 if not os.path.exists(results_dir):
@@ -93,6 +88,8 @@ del df['GEV_y']
 df = df.rename(columns={'GEV_x': 'GEV'})
 df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
 
+# Remove missing items
+df = df[~pd.isna(df['REV_1_SCORE']) & ~pd.isna(df['REV_2_SCORE'])]
 #%%
 
 stratification_df = pd.read_excel('../data/dati_leida_campione.xlsx')
