@@ -46,6 +46,9 @@ df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
 del df['missing_1']
 del df['missing_2']
 
+# Remove items with missing metrics
+df = df[~pd.isna(df['ncs'])]
+
 #%% Add missing lower and upper bound values
 min_rev_score = 3
 max_rev_score = 30
