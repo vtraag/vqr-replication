@@ -94,13 +94,16 @@ df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
 df = df[~pd.isna(df['REV_1_SCORE']) & ~pd.isna(df['REV_2_SCORE']) & ~pd.isna(df['ncs'])]
 #%%
 
-stratification_df = pd.read_excel('../data/dati_leida_campione.xlsx')
-#stratification_df = stratification_df[stratification_df['Typology'] == 'U']
+stratification_df = pd.read_csv('../data/prodotti_universo_campione.csv', index_col='INSTITUTION_ID')
+stratification_df['n_pubs_in_study'] = df.groupby(level='INSTITUTION_ID').size()
+stratification_df['prop_pubs_in_sample'] = stratification_df['in_sample'].fillna(0)/stratification_df['VQR_submissions']
+stratification_df['prop_pubs_in_study'] = stratification_df['n_pubs_in_study'].fillna(0)/stratification_df['VQR_submissions']
+
 #%%
 
 plt.figure(figsize=(4, 3))
 bins = np.linspace(0, 15, 16)
-plt.hist(stratification_df['WoS_Universe'],
+plt.hist(100*stratification_df['prop_pubs_in_study'],
          bins=bins, color=colors[1],histtype='stepfilled')
 plt.grid(axis='y', ls=':')
 plt.ylabel('Frequency')

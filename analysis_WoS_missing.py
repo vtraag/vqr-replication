@@ -432,3 +432,15 @@ plt.grid(axis='y', ls=':')
 sns.despine()
 plt.savefig(os.path.join(results_dir, 'MAPD.pdf'), bbox_inches='tight')
 plt.savefig(os.path.join(results_dir, 'MAPD.png'), dpi=300, bbox_inches='tight')
+
+#%%
+import statsmodels.formula.api as smf
+
+df['abs_diff_rev_2'] = np.abs(df['REV_2_SCORE'] - df['REV_1_SCORE'])
+mod = smf.ols('abs_diff_rev_2 ~ ncs', df)
+res = mod.fit()
+res.summary()
+#%%
+df['predict_missing_abs_diff_rev_2'] = res.predict(df)
+df.groupby('missing_either')[['predict_missing_abs_diff_rev_2', 'abs_diff_rev_2']].median()
+df.groupby('missing_either')[['predict_missing_abs_diff_rev_2', 'abs_diff_rev_2']].mean()
