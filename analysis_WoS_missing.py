@@ -444,3 +444,13 @@ res.summary()
 df['predict_missing_abs_diff_rev_2'] = res.predict(df)
 df.groupby('missing_either')[['predict_missing_abs_diff_rev_2', 'abs_diff_rev_2']].median()
 df.groupby('missing_either')[['predict_missing_abs_diff_rev_2', 'abs_diff_rev_2']].mean()
+
+#%%
+for GEV_id, GEV_df in df.groupby('GEV_id'):
+  print(f'GEV: {GEV_id}')
+  mod = smf.ols('abs_diff_rev_2 ~ ncs', GEV_df)
+  res = mod.fit()
+  print(res.summary())
+  GEV_df['predict_missing_abs_diff_rev_2'] = res.predict(GEV_df)
+  #df.groupby('missing_either')[['predict_missing_abs_diff_rev_2']].median()
+  GEV_df.groupby('missing_either')[['predict_missing_abs_diff_rev_2']].mean()
