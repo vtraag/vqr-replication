@@ -280,7 +280,13 @@ def bootstrap_MAD_MAPD_inst(df, N):
   n = df.shape[0]
   global bootstrap_df
   for _ in range(N):
-    bootstrap_df = df.iloc[np.random.randint(n, size=n)]
+
+    # Bootstrap stratified sample
+    sample_index = []
+    for gev, gev_df in df.groupby('GEV_id'):
+      sample_index.extend(np.random.choice(gev_df.index, gev_df.shape[0]))
+    bootstrap_df = df.loc[sample_index]
+
     yield(calc_MAD_and_MAPD_inst(bootstrap_df))
 #%%
 limited_df = pd.merge(df.reset_index(), n_per_institution[n_per_institution >= min_n_per_institution].reset_index(), on=['INSTITUTION_ID', 'GEV'])
