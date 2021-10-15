@@ -29,26 +29,19 @@ today = date.today().strftime('%Y%m%d')
 np.random.seed(0)
 min_n_per_institution = 1
 
-data_type = 'all' # all | universities
-
-results_dir = '../results/min={min}/{data}/missing'.format(min=min_n_per_institution, data=data_type)
+results_dir = '../results/min={min}/missing'.format(min=min_n_per_institution)
 if not os.path.exists(results_dir):
   os.makedirs(results_dir)
 
 #%% Read data
-df = pd.read_csv('../data/WoS_indic.csv')
-if data_type == 'universities':
-  df = df[df['INSTITUTION_TYPE'] == 'U']
-df = pd.merge(gev_names_df, df, left_on='GEV_id', right_on='GEV')
-del df['GEV_y']
-df = df.rename(columns={'GEV_x': 'GEV'})
-df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
-del df['missing_1']
-del df['missing_2']
+df = pd.read_csv('../data/public/metrics.csv')
+df = pd.merge(gev_names_df, df, on='GEV_id')
+df = df.set_index(['INSTITUTION_ID', 'GEV'])
 
 # Remove items with missing metrics
 df = df[~pd.isna(df['ncs'])]
 
+df['GEV_numeric'] = df['GEV_id'].apply(lambda x: int(re.match(r'\d*', x)[0]))
 #%% Add missing lower and upper bound values
 min_rev_score = 3
 max_rev_score = 30
@@ -62,11 +55,11 @@ df['missing_either'] = pd.isna(df['REV_1_SCORE']) | pd.isna(df['REV_2_SCORE'])
 df['missing_both'] = pd.isna(df['REV_1_SCORE']) & pd.isna(df['REV_2_SCORE'])
 df['n_reviewers'] = pd.isna(df['REV_1_SCORE']).astype(int) + pd.isna(df['REV_2_SCORE']).astype(int)
 GEV_n_pubs = df.groupby(level=['GEV'], sort=False)\
-                      .aggregate({'REV_1_SCORE': 'count', 'REV_2_SCORE': 'count', 'ID_VQR10': 'count', 
+                      .aggregate({'REV_1_SCORE': 'count', 'REV_2_SCORE': 'count',
                                   'missing_either': 'sum', 'missing_both': 'sum'})
 GEV_n_pubs = GEV_n_pubs.rename(columns={'REV_1_SCORE': 'n_pubs_rev1', 
-                           'REV_2_SCORE': 'n_pubs_rev2',
-                           'ID_VQR10': 'n_pubs'})
+                           'REV_2_SCORE': 'n_pubs_rev2'})
+GEV_n_pubs['n_pubs'] = df.groupby(level=['GEV']).size()
 GEV_n_pubs['n_pubs_missing_rev1'] = GEV_n_pubs['n_pubs'] - GEV_n_pubs['n_pubs_rev1']
 GEV_n_pubs['n_pubs_missing_rev2'] = GEV_n_pubs['n_pubs'] - GEV_n_pubs['n_pubs_rev2']
 GEV_n_pubs['prop_pubs_missing_rev1'] = GEV_n_pubs['n_pubs_missing_rev1']/GEV_n_pubs['n_pubs']
@@ -111,8 +104,9 @@ GEV_ind = df.reset_index().groupby(['GEV', 'n_reviewers'], sort=False)\
 
 #%% Calculate institutional sizes
 n_per_institution = df.groupby(level=['INSTITUTION_ID', 'GEV'], sort=False)\
-                      .aggregate({'REV_1_SCORE': 'count', 'REV_2_SCORE': 'count', 'ID_VQR10': 'count'})
-n_per_institution.columns = ['n_pubs_rev1', 'n_pubs_rev2', 'n_pubs']
+                      .aggregate({'REV_1_SCORE': 'count', 'REV_2_SCORE': 'count'})
+n_per_institution.columns = ['n_pubs_rev1', 'n_pubs_rev2']
+n_per_institution['n_pubs'] = df.groupby(level=['INSTITUTION_ID', 'GEV']).size()
 n_per_institution['n_pubs_missing_rev1'] = n_per_institution['n_pubs'] - n_per_institution['n_pubs_rev1']
 n_per_institution['n_pubs_missing_rev2'] = n_per_institution['n_pubs'] - n_per_institution['n_pubs_rev2']
 limited_df = pd.merge(df.reset_index(), n_per_institution[n_per_institution['n_pubs'] >= min_n_per_institution].reset_index(), on=['INSTITUTION_ID', 'GEV'])

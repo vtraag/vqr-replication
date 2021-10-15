@@ -2,22 +2,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pyodbc
 import re
 import statsmodels.formula.api as smf
 import os
 from datetime import date
 
 colors = sns.palettes.mpl_palette('Set1', 8)
-
-def get_conn():
-  conn = pyodbc.connect(
-              driver='{SQL Server Native Client 11.0}',
-              server='p-cwts-010260',
-              database='userdb_traagva1',
-              trusted_connection='yes',
-              unicode_results=False);
-  return conn;
 
 gev_names_df = pd.DataFrame(
   [['1', "Mathematics and Computer Sciences"],
@@ -33,101 +23,35 @@ gev_names_df = pd.DataFrame(
   ['13', "Economics and Statistics"]], columns=['GEV_id', 'GEV'])
 
 today = date.today().strftime('%Y%m%d')
-#%%
-get_data_from_SQL = False
-if get_data_from_SQL:
-    try:
-      conn = get_conn()
-    except:
-      conn = None
-    
-    if conn:
-      sql = """
-          SELECT *
-            FROM VQR
-            LEFT JOIN VQR_WoS_indic AS indic
-              ON indic.ut = VQR.ut
-        """;
-      df = pd.io.sql.read_sql(sql, conn);
-      conn.close()
-    
-      # Randomly pick either reviewer 1 or reviewer 2 as reviewer 1.
-      np.random.seed(235)
-      df['reviewer'] = np.random.randint(1, 3, size=df.shape[0])
-      rev_1_cols = [c for c in df.columns if 'REV_1' in c]
-      rev_2_cols = [c for c in df.columns if 'REV_2' in c]
-      df[rev_1_cols + rev_2_cols] = df[rev_1_cols + rev_2_cols].where(
-                                      df['reviewer'] == 1,
-                                      df[rev_2_cols + rev_1_cols].values)
-    
-      df['GEV_numeric'] = df['GEV'].apply(lambda x: int(re.match(r'\d*', x)[0]))
-      df = df.set_index(['INSTITUTION_ID', 'GEV']);
-    
-      df = df.sort_values('GEV_numeric')
-    
-      df['REV_1_SCORE'] = df[['REV_1_ORIGINALITY', 'REV_1_RIGOR', 'REV_1_IMPACT']].sum(axis=1, skipna=False)
-      df['REV_2_SCORE'] = df[['REV_2_ORIGINALITY', 'REV_2_RIGOR', 'REV_2_IMPACT']].sum(axis=1, skipna=False)
-      df['REV_SCORE'] = df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1, skipna=False)
-    
-      df.to_csv('../data/WoS_indic.csv')
-    
+
 #%%
 np.random.seed(0)
-min_n_per_institution = 5
+min_n_per_institution = 1
 
-data_type = 'all' # all | universities
-
-results_dir = '../results/min={min}/{data}/'.format(min=min_n_per_institution, data=data_type)
+results_dir = '../results/min={min}/'.format(min=min_n_per_institution)
 if not os.path.exists(results_dir):
   os.makedirs(results_dir)
 
 #%% Read data
-df = pd.read_csv('../data/WoS_indic.csv')
-if data_type == 'universities':
-  df = df[df['INSTITUTION_TYPE'] == 'U']
-df = pd.merge(gev_names_df, df, left_on='GEV_id', right_on='GEV')
-del df['GEV_y']
-df = df.rename(columns={'GEV_x': 'GEV'})
-df = df.set_index(['INSTITUTION_ID', 'GEV', 'ID_OUTPUT'])
+df = pd.read_csv('../data/public/metrics.csv')
+df = pd.merge(gev_names_df, df, on='GEV_id')
+df = df.set_index(['INSTITUTION_ID', 'GEV'])
 
 # Remove items with missing review and metrics
 df = df[~pd.isna(df['REV_1_SCORE']) & ~pd.isna(df['REV_2_SCORE']) & ~pd.isna(df['ncs'])]
-#%%
 
-stratification_df = pd.read_csv('../data/prodotti_universo_campione.csv', index_col='INSTITUTION_ID')
-stratification_df['n_pubs_in_study'] = df.groupby(level='INSTITUTION_ID').size()
-stratification_df['prop_pubs_in_sample'] = stratification_df['in_sample'].fillna(0)/stratification_df['VQR_submissions']
-stratification_df['prop_pubs_in_study'] = stratification_df['n_pubs_in_study'].fillna(0)/stratification_df['VQR_submissions']
-
-#%%
-
-plt.figure(figsize=(4, 3))
-bins = np.linspace(0, 15, 16)
-plt.hist(100*stratification_df['prop_pubs_in_study'],
-         bins=bins, color=colors[1],histtype='stepfilled')
-plt.grid(axis='y', ls=':')
-plt.ylabel('Frequency')
-plt.xlabel('Sample %')
-sns.despine()
-plt.savefig(os.path.join(results_dir, 'stratification.pdf'), bbox_inches='tight')
-#%%
-missing_uni_df = stratification_df.query('WoS_Leiden_sample == 0')
-#%%
-cols = ['cs', 'ncs', 'p_top_prop',
-        'CITATIONS_NUMBER', 'PERCENTILE_CITATIONS',
-        'js', 'njs', 'jpp_top_prop',
-        'INDICATOR_VALUE', 'PERCENTILE_INDICATOR_VALUE',
-        'REV_1_SCORE', 'REV_2_SCORE', 'REV_SCORE'];
-
-#%% Correlation at individual levels (overall)
-corr_individual = df[cols].corr('spearman')
+df['GEV_numeric'] = df['GEV_id'].apply(lambda x: int(re.match(r'\d*', x)[0]))
+#%% Define relevant columns
+cols = ['ncs', 'njs', 
+        'PERCENTILE_CITATIONS', 'PERCENTILE_INDICATOR_VALUE',
+        'REV_1_SCORE', 'REV_2_SCORE'];
 #%% Calculate outcome results on institutional level  (overall)
 inst_df = df[cols].groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).mean().reset_index()
 
 #%% #%% Sample size per GEV per institutions
 n_per_institution = df.groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).size()
 n_per_institution.name = 'n_pubs'
-n_per_institution.to_excel('../results/number_of_publications.xlsx')
+
 #%% Scatter plot at individual level (njs individual level)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
 for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
@@ -277,7 +201,7 @@ def calc_MAD_and_MAPD_inst(df):
 bootstrap_df = None
 
 def bootstrap_MAD_MAPD_inst(df, N):
-  n = df.shape[0]
+
   global bootstrap_df
   for _ in range(N):
 
@@ -311,7 +235,7 @@ def percentile(n):
   return percentile_
 
 GEV_df = inst_gev_df.groupby('GEV_id').aggregate([percentile(2.5), percentile(50), percentile(97.5)])
-GEV_df = pd.merge(gev_names_df, GEV_df, left_on='GEV_id', right_index=True)
+GEV_df['GEV'] = gev_names_df.set_index('GEV_id')
 #%%
 x = np.arange(GEV_df.shape[0])
 y = GEV_df[('n_pubs', 'percentile_50')]
@@ -341,7 +265,7 @@ up_bound.columns.set_levels(['ub'], level=1, inplace=True)
 MAD.columns = pd.MultiIndex.from_tuples([(c, 'empirical') for c in MAD.columns])
 MAD = pd.concat([MAD, low_bound, up_bound], axis=1)
 MAD = MAD.sort_index(axis=1)
-MAD = pd.merge(gev_names_df, MAD, left_on='GEV_id', right_index=True)
+MAD['GEV'] = gev_names_df.set_index('GEV_id')
 #%%
 
 low_bound = pd.concat(MAPD_bootstrap).groupby('GEV_id').aggregate([lambda x: np.percentile(x, 100*(1 - conf_interval)/2)])
@@ -351,7 +275,7 @@ up_bound.columns.set_levels(['ub'], level=1, inplace=True)
 MAPD.columns = pd.MultiIndex.from_tuples([(c, 'empirical') for c in MAPD.columns])
 MAPD = pd.concat([MAPD, low_bound, up_bound], axis=1)
 MAPD = MAPD.sort_index(axis=1)
-MAPD = pd.merge(gev_names_df, MAPD, left_on='GEV_id', right_index=True)
+MAPD['GEV'] = gev_names_df.set_index('GEV_id')
 #%%
 
 MAD.to_csv(os.path.join(results_dir, 'MAD.csv'))
@@ -466,9 +390,15 @@ def calc_MAD_ind(df):
   return MAD
 
 def bootstrap_MAD_ind(df, N):
-  n = df.shape[0]
+
   for _ in range(N):
-    bootstrap_df = df.iloc[np.random.randint(n, size=n)]
+
+    # Bootstrap stratified sample
+    sample_index = []
+    for gev, gev_df in df.groupby('GEV_id'):
+      sample_index.extend(np.random.choice(gev_df.index, gev_df.shape[0]))
+    bootstrap_df = df.loc[sample_index]
+
     yield(calc_MAD_ind(bootstrap_df))
 
 #%%
