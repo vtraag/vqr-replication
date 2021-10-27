@@ -10,17 +10,18 @@ from datetime import date
 colors = sns.palettes.mpl_palette('Set1', 8)
 
 gev_names_df = pd.DataFrame(
-  [['1', "Mathematics and Computer Sciences"],
-  ['2', "Physics"],
-  ['3', "Chemistry"],
-  ['4', "Earth Sciences"],
-  ['5', "Biology"],
-  ['6', "Medicine"],
-  ['7', "Agricultural and veterinary sciences"],
-  ['8b', "Civil Engineering"],
-  ['9', "Industrial and Information Engineering"],
-  ['11b', "Psychology"],
-  ['13', "Economics and Statistics"]], columns=['GEV_id', 'GEV'])
+  [['1', 1, "Mathematics and Computer Sciences"],
+  ['2', 2, "Physics"],
+  ['3', 3, "Chemistry"],
+  ['4', 4, "Earth Sciences"],
+  ['5', 5, "Biology"],
+  ['6', 6, "Medicine"],
+  ['7', 7, "Agricultural and veterinary sciences"],
+  ['8b', 8, "Civil Engineering"],
+  ['9', 9, "Industrial and Information Engineering"],
+  ['11b', 11, "Psychology"],
+  ['13', 13, "Economics and Statistics"]], columns=['GEV_id', 'GEV_numeric', 'GEV'])
+gev_names_df = gev_names_df.set_index('GEV_id')
 
 today = date.today().strftime('%Y%m%d')
 
@@ -35,26 +36,25 @@ if not os.path.exists(results_dir):
 #%% Read data
 df = pd.read_csv('../data/public/metrics.csv')
 df = pd.merge(gev_names_df, df, on='GEV_id')
-df = df.set_index(['INSTITUTION_ID', 'GEV'])
+df = df.set_index(['INSTITUTION_ID', 'GEV_id'])
 
 # Remove items with missing review and metrics
 df = df[~pd.isna(df['REV_1_SCORE']) & ~pd.isna(df['REV_2_SCORE']) & ~pd.isna(df['ncs'])]
 
-df['GEV_numeric'] = df['GEV_id'].apply(lambda x: int(re.match(r'\d*', x)[0]))
 #%% Define relevant columns
 cols = ['ncs', 'njs', 
         'PERCENTILE_CITATIONS', 'PERCENTILE_INDICATOR_VALUE',
         'REV_1_SCORE', 'REV_2_SCORE'];
 #%% Calculate outcome results on institutional level  (overall)
-inst_df = df[cols].groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).mean().reset_index()
+inst_df = df[cols].groupby(level=['INSTITUTION_ID', 'GEV_id'], sort=False).mean().reset_index()
 
 #%% #%% Sample size per GEV per institutions
-n_per_institution = df.groupby(level=['INSTITUTION_ID', 'GEV'], sort=False).size()
+n_per_institution = df.groupby(level=['INSTITUTION_ID', 'GEV_id'], sort=False).size()
 n_per_institution.name = 'n_pubs'
 
 #%% Scatter plot at individual level (njs individual level)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(df.groupby('GEV', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
@@ -93,7 +93,7 @@ fig.text(0.05, 0.5, 'NCS', va='center', rotation='vertical')
 fig.savefig(os.path.join(results_dir, 'scatter_pub_ncs.pdf'))
 #%% Scatter plot at individual level (reviewer individual level)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(df.groupby(level='GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(df.groupby('GEV', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
@@ -213,11 +213,11 @@ def bootstrap_MAD_MAPD_inst(df, N):
 
     yield(calc_MAD_and_MAPD_inst(bootstrap_df))
 #%%
-limited_df = pd.merge(df.reset_index(), n_per_institution[n_per_institution >= min_n_per_institution].reset_index(), on=['INSTITUTION_ID', 'GEV'])
+limited_df = pd.merge(df.reset_index(), n_per_institution[n_per_institution >= min_n_per_institution].reset_index(), on=['INSTITUTION_ID', 'GEV_id'])
 
 #%%
 
-inst_gev_df = limited_df.groupby(['INSTITUTION_ID', 'GEV_id', 'GEV_numeric'])\
+inst_gev_df = limited_df.groupby(['INSTITUTION_ID', 'GEV_id', 'GEV'], sort=False)\
                     .aggregate({'REV_1_SCORE': 'mean',
                                 'REV_2_SCORE': 'mean',
                                 'ncs': 'mean',
@@ -235,7 +235,7 @@ def percentile(n):
   return percentile_
 
 GEV_df = inst_gev_df.groupby('GEV_id').aggregate([percentile(2.5), percentile(50), percentile(97.5)])
-GEV_df['GEV'] = gev_names_df.set_index('GEV_id')
+GEV_df['GEV'] = gev_names_df['GEV']
 #%%
 x = np.arange(GEV_df.shape[0])
 y = GEV_df[('n_pubs', 'percentile_50')]
@@ -265,7 +265,9 @@ up_bound.columns.set_levels(['ub'], level=1, inplace=True)
 MAD.columns = pd.MultiIndex.from_tuples([(c, 'empirical') for c in MAD.columns])
 MAD = pd.concat([MAD, low_bound, up_bound], axis=1)
 MAD = MAD.sort_index(axis=1)
-MAD['GEV'] = gev_names_df.set_index('GEV_id')
+MAD['GEV'] = gev_names_df['GEV']
+MAD['GEV_numeric'] = gev_names_df['GEV_numeric']
+MAD = MAD.sort_values('GEV_numeric')
 #%%
 
 low_bound = pd.concat(MAPD_bootstrap).groupby('GEV_id').aggregate([lambda x: np.percentile(x, 100*(1 - conf_interval)/2)])
@@ -275,7 +277,9 @@ up_bound.columns.set_levels(['ub'], level=1, inplace=True)
 MAPD.columns = pd.MultiIndex.from_tuples([(c, 'empirical') for c in MAPD.columns])
 MAPD = pd.concat([MAPD, low_bound, up_bound], axis=1)
 MAPD = MAPD.sort_index(axis=1)
-MAPD['GEV'] = gev_names_df.set_index('GEV_id')
+MAPD['GEV'] = gev_names_df['GEV']
+MAPD['GEV_numeric'] = gev_names_df['GEV_numeric']
+MAPD = MAPD.sort_values('GEV_numeric')
 #%%
 
 MAD.to_csv(os.path.join(results_dir, 'MAD.csv'))
@@ -458,7 +462,7 @@ plt.savefig(os.path.join(results_dir, 'MAD_ind.png'), dpi=300, bbox_inches='tigh
 
 #%% Scatter plot at institutional level (ncs)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV_id', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
@@ -483,7 +487,7 @@ for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
   else:
       ax.set_yticks([])
 
-  ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')
+  ax.text(0.05, 0.9, '{0}'.format(gev_names_df.loc[gev,'GEV'][:30]), transform=ax.transAxes, ha='left', va='baseline')
 
 ax = axs[2][3]
 ax.set_xlim(0, 35)
@@ -498,7 +502,7 @@ fig.savefig(os.path.join(results_dir, 'scatter_inst_ncs.pdf'), bbox_inches='tigh
 fig.savefig(os.path.join(results_dir, 'scatter_inst_ncs.png'), dpi=300, bbox_inches='tight')
 #%% Scatter plot at institutional level (ncs)
 fig, axs = plt.subplots(nrows=3, ncols=4, figsize=(4*2, 3*2))
-for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
+for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV_id', sort=False)):
   row = int(idx / 4)
   col = idx % 4
   ax = axs[row][col]
@@ -525,7 +529,7 @@ for idx, (gev, gev_df) in enumerate(inst_df.groupby('GEV', sort=False)):
   else:
       ax.set_yticks([])
 
-  ax.text(0.05, 0.9, '{0}'.format(gev[:30]), transform=ax.transAxes, ha='left', va='baseline')
+  ax.text(0.05, 0.9, '{0}'.format(gev_names_df.loc[gev,'GEV'][:30]), transform=ax.transAxes, ha='left', va='baseline')
 
 ax = axs[2][3]
 ax.set_xlim(0, 35)
