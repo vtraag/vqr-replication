@@ -27,7 +27,7 @@ today = date.today().strftime('%Y%m%d')
 
 #%%
 np.random.seed(0)
-min_n_per_institution = 1
+min_n_per_institution = 5
 
 results_dir = '../results/min={min}/'.format(min=min_n_per_institution)
 if not os.path.exists(results_dir):
