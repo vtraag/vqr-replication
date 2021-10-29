@@ -200,12 +200,12 @@ def calc_MAD_and_MAPD_inst(df):
   MAPDs = []
   for GEV_id, GEV_df in inst_df.groupby('GEV_id'):
     ##%% Predict values
-    res_ncs = smf.ols(formula='REV_1_SCORE ~ ncs', data=GEV_df).fit()
-    res_njs = smf.ols(formula='REV_1_SCORE ~ njs', data=GEV_df).fit()
+    res_ncs = smf.quantreg(formula='REV_1_SCORE ~ ncs', data=GEV_df).fit(q=0.5, max_iter=10000)
+    res_njs = smf.quantreg(formula='REV_1_SCORE ~ njs', data=GEV_df).fit(q=0.5, max_iter=10000)
 
     if GEV_id != '13':
-      res_perc_cit = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_CITATIONS', data=GEV_df).fit()
-      res_perc_ind = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_INDICATOR_VALUE', data=GEV_df).fit()
+      res_perc_cit = smf.quantreg(formula='REV_1_SCORE ~ PERCENTILE_CITATIONS', data=GEV_df).fit(q=0.5, max_iter=10000)
+      res_perc_ind = smf.quantreg(formula='REV_1_SCORE ~ PERCENTILE_INDICATOR_VALUE', data=GEV_df).fit(q=0.5, max_iter=10000)
 
     GEV_df['pred_ncs'] = res_ncs.predict(GEV_df['ncs'])
     GEV_df['pred_njs'] = res_njs.predict(GEV_df['njs'])
@@ -299,12 +299,12 @@ def calc_MAD_ind(df):
   MADs = []
   for GEV_id, GEV_df in df.groupby('GEV_id'):
     ##%% Predict values
-    res_ncs = smf.ols(formula='REV_1_SCORE ~ ncs', data=GEV_df).fit()
-    res_njs = smf.ols(formula='REV_1_SCORE ~ njs', data=GEV_df).fit()
+    res_ncs = smf.quantreg(formula='REV_1_SCORE ~ ncs', data=GEV_df).fit(q=0.5, max_iter=10000)
+    res_njs = smf.quantreg(formula='REV_1_SCORE ~ njs', data=GEV_df).fit(q=0.5, max_iter=10000)
     
     if GEV_id != '13':
-      res_perc_cit = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_CITATIONS', data=GEV_df).fit()
-      res_perc_ind = smf.ols(formula='REV_1_SCORE ~ PERCENTILE_INDICATOR_VALUE', data=GEV_df).fit()
+      res_perc_cit = smf.quantreg(formula='REV_1_SCORE ~ PERCENTILE_CITATIONS', data=GEV_df).fit(q=0.5, max_iter=10000)
+      res_perc_ind = smf.quantreg(formula='REV_1_SCORE ~ PERCENTILE_INDICATOR_VALUE', data=GEV_df).fit(q=0.5, max_iter=10000)
     
     ##%% Calculate differences
     GEV_df['pred_ncs'] = res_ncs.predict(GEV_df['ncs'])
