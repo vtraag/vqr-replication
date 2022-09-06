@@ -1,0 +1,11 @@
+name: VQR
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.23.2
+  - pandas=1.4.4
+  - scipy=1.9.1
+  - cmdstanpy=1.0.7
+  - spyder=5.3.3
+prefix: /home/vtraag/mambaforge/envs/VQR
