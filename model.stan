@@ -73,9 +73,9 @@ model {
     for (i in 1:N)
     {
         metrics[i] ~ multi_normal(to_vector([value_paper_cit[i], value_paper_rev[i], value_paper_rev[i]]),
-                                                                    sigma_paper);
+                                sigma_paper);
 
         values[i] ~ multi_normal(to_vector([value_inst_cit[institution_per_paper[i]], value_inst_rev[institution_per_paper[i]]]),
-                                                      sigma_inst);
+                                sigma_inst);
     }
 }
