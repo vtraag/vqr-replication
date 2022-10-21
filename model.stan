@@ -18,21 +18,22 @@ data {
     int<lower=0> N_institutions; // Number of institutions
 
     /* Reviewer 1 */
-    array[N] int<lower=3,higher=30> review_score_1; // Review score per paper
+    array[N] real<lower=3,upper=30> review_score_1; // Review score per paper
     int N_review_score_1_missing; // Number of review scores missing
-    array[N_review_score_1_missing] int<lower=1,higher=N> review_score_1_missing_idx; // Missing review scores indices
+    array[N_review_score_1_missing] int<lower=1,upper=N> review_score_1_missing_idx; // Missing review scores indices
 
     /* Reviewer 2 */
-    array[N] int<lower=3,higher=30> review_score_2; // Review score per paper
+    array[N] real<lower=3,upper=30> review_score_2; // Review score per paper
     int N_review_score_2_missing; // Number of review scores missing
-    array[N_review_score_2_missing] int<lower=1,higher=N> review_score_2_missing_idx; // Missing review scores indices
+    array[N_review_score_2_missing] int<lower=1,upper=N> review_score_2_missing_idx; // Missing review scores indices
 
-    real[N] citation_score; // Citation score
+    array[N] real<lower=0> citation_score; // Citation score
     int N_citation_score_missing; // Number of citation scores missing
-    array[N_citation_score_missing] int<lower=1,higher=N>  citation_score_missing_idx; // Missing citation score indices
-    int citation_score_type // Citation score type (i.e. NCS/NJS or Percentile Score)
+    array[N_citation_score_missing] int<lower=1,upper=N>  citation_score_missing_idx; // Missing citation score indices
+    int citation_score_type; // Citation score type (i.e. NCS/NJS or Percentile Score)
 
-    array[N] int<lower=1,higher=N_institutions> institution_per_paper;
+    array[N] int<lower=1,upper=N_institutions> institution_per_paper;
+}
 }
 parameters {
     real<lower=0> sigma_paper_cit;
