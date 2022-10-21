@@ -70,11 +70,12 @@ transformed parameters {
 }
 model {
     // For NCS-like citation scores
-    citation_score, review_score_1, review_score_2 ~ multilognormal([value_paper_cit, value_paper_rev, value_paper_rev], 
+    for (i in 1:N)
+    {
+        metrics[i] ~ multi_normal(to_vector([value_paper_cit[i], value_paper_rev[i], value_paper_rev[i]]),
                                                                     sigma_paper);
 
-    value_paper_cit, value_paper_rev ~ multilognormal([value_inst_cit[institution_per_paper], value_inst_rev[institution_per_paper]],
+        values[i] ~ multi_normal(to_vector([value_inst_cit[institution_per_paper[i]], value_inst_rev[institution_per_paper[i]]]),
                                                       sigma_inst);
-
-
+    }
 }
