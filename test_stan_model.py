@@ -57,19 +57,18 @@ data = {
 }
 
 #%%
+now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
+output_dir = f'../results/{now}'
+fit = model.sample(data=data, chains=1, output_dir = output_dir)
 
-fit = model.sample(data=data, chains=1)
-
-#%% Save model fits
-
-if not os.path.exists('../results'):
-    os.makedirs('../results/')
-    
-fit.save_csvfiles('../results/')
 
 #%%
 
 print(fit.diagnose())
+
+#%%
+
+draws_df = fit.draws_pd()
 
 #%%
 
