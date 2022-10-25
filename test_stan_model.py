@@ -51,7 +51,7 @@ data = {
     'N_reviews':    review_df.shape[0],        
     'N_papers':    paper_df.shape[0],
     'N_institutions':   nuniq(paper_df['new_institution_id']),
-    'review_score': review_df['review_score'],
+    'review_score': (review_df['review_score'] - 2).astype('int'), # Should be between 1-28
     'paper_per_review': review_df['new_paper_id'],
     'citation_score': paper_df['ncs'],
     'institution_per_paper': paper_df['new_institution_id']
