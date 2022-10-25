@@ -62,7 +62,6 @@ now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
 output_dir = f'../results/{now}'
 fit = model.sample(data=data, chains=1, output_dir = output_dir)
 
-
 #%%
 
 print(fit.diagnose())
@@ -73,6 +72,18 @@ draws_df = fit.draws_pd()
 
 #%%
 import seaborn as sns
+import matplotlib.pyplot as plt
 
-sns.distplot(draws_df['scale_paper[2]'])
-sns.distplot(draws_df['scale_inst[2]'])
+sns.distplot(draws_df['corr_paper[1,2]'])
+sns.distplot(draws_df['corr_inst[1,2]'])
+#%%
+
+sns.distplot(draws_df['sigma_review'])
+#%%
+
+sns.distplot(draws_df['value_paper_rev[2]'])
+sns.distplot(draws_df['value_paper_rev[163]'])
+
+#%%
+
+plt.plot(draws_df['corr_inst[1,2]'])
