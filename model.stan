@@ -1,13 +1,48 @@
+functions {
+    real to_real(int x)
+    {
+        return 1.0*x;
+    }
+
+    real review_score_logpdf(int review_score, vector cutpoints, real mu, real sigma)
+    {
+        if (review_score <= 1)
+        {
+            // This would be similar to having review_score[0] = -Infinity
+            return normal_lcdf(cutpoints[1] | mu, sigma);
+        }
+        else if (review_score > size(cutpoints))
+        {
+            // This would be similar to having review_score[size(cutpoints) + 1] = Infinity
+            return normal_lccdf(cutpoints[size(cutpoints)] | mu, sigma);
+        }
+        else
+        {
+            return log_diff_exp(normal_lcdf(cutpoints[review_score] | mu, sigma),
+                                normal_lcdf(cutpoints[review_score - 1]     | mu, sigma));
+        }
+    }
+
+}
 data {
     int<lower=0> N_reviews; // Number of reviews
     int<lower=0> N_papers; // Number of papers
     int<lower=0> N_institutions; // Number of institutions
 
-    array[N_reviews] real<lower=3,upper=30> review_score; // Review score per paper
+    array[N_reviews] int<lower=1,upper=28> review_score; // Review score per paper
     array[N_reviews] int<lower=1,upper=N_papers> paper_per_review;
 
     array[N_papers] real<lower=0> citation_score; // Citation score
     array[N_papers] int<lower=1,upper=N_institutions> institution_per_paper;
+}
+transformed data {
+    // Cutpoints for the distribution of the review scores
+    int K_review_score_points = 28;
+    ordered[K_review_score_points-1] review_cutpoints;
+    for (i in 1:(K_review_score_points - 1))
+    {
+        review_cutpoints[i] = inv_Phi( to_real(i)/K_review_score_points );
+    }
 }
 parameters {
     // Review value per paper
@@ -82,6 +117,12 @@ model {
     // The actual review scores per paper are sampled from a normal distribution
     // which is centered at the citation value for each paper, with a certain
     // uncertainty.
-    review_score ~ normal(value_paper_rev[paper_per_review], sigma_review);
-
+    for (i in 1:N_reviews)
+    {
+        real rev_score_p = review_score_logpdf(review_score[i], 
+                                      review_cutpoints,
+                                      value_paper_rev[paper_per_review[i]],
+                                      sigma_review);
+        target += rev_score_p;
+    }
 }
