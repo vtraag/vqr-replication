@@ -86,6 +86,8 @@ model {
     scale_paper ~ cauchy(0, 2.5);
     scale_inst  ~ cauchy(0, 2.5);
 
+    sigma_review ~ exponential(1);
+
     {
         // Build up vectorised representation for multidimensional normal distribution
         array[N_institutions] vector[2] value_inst;
