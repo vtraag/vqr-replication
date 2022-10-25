@@ -2,6 +2,7 @@ from cmdstanpy import CmdStanModel
 import os
 import pandas as pd
 import numpy as np
+import datetime as dt
 #%%
 
 stan_file = os.path.abspath('./model.stan')
@@ -71,6 +72,7 @@ print(fit.diagnose())
 draws_df = fit.draws_pd()
 
 #%%
+import seaborn as sns
 
-draws_df = fit.draws_pd()
-plt.plot(draws_df['sigma_review'])
+sns.distplot(draws_df['scale_paper[2]'])
+sns.distplot(draws_df['scale_inst[2]'])
