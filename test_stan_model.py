@@ -1,3 +1,4 @@
+#%%
 from cmdstanpy import CmdStanModel
 import os
 import pandas as pd
@@ -70,20 +71,27 @@ print(fit.diagnose())
 
 draws_df = fit.draws_pd()
 
+summary_df = fit.summary()
+
 #%%
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 sns.distplot(draws_df['corr_paper[1,2]'])
 sns.distplot(draws_df['corr_inst[1,2]'])
+
+#%%
+plt.plot(draws_df['corr_paper[1,2]'])
+plt.plot(draws_df['corr_inst[1,2]'])
+
+#%%
+sns.pairplot(draws_df[['corr_paper[1,2]', 'corr_inst[1,2]']])
+
 #%%
 
 sns.distplot(draws_df['sigma_review'])
+
 #%%
 
 sns.distplot(draws_df['value_paper_rev[2]'])
 sns.distplot(draws_df['value_paper_rev[163]'])
-
-#%%
-
-plt.plot(draws_df['corr_inst[1,2]'])
