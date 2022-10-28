@@ -83,8 +83,8 @@ model {
     L_corr_paper ~ lkj_corr_cholesky(2);
     L_corr_inst  ~ lkj_corr_cholesky(2);
 
-    scale_paper ~ cauchy(0, 2.5);
-    scale_inst  ~ cauchy(0, 2.5);
+    scale_paper ~ exponential(1);
+    scale_inst  ~ exponential(1);
 
     sigma_review ~ exponential(1);
 
