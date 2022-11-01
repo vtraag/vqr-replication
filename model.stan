@@ -23,6 +23,26 @@ functions {
         }
     }
 
+    // From https://github.com/paul-buerkner/brms/blob/59f3b789d78c741fe2523f3c6df6b54982f89830/inst/chunks/fun_hurdle_lognormal.stan
+    /* hurdle lognormal log-PDF of a single response
+    * logit parameterization of the hurdle part
+    * Args:
+    *   y: the response value
+    *   mu: mean parameter of the lognormal distribution
+    *   sigma: sd parameter of the lognormal distribution
+    *   hu: linear predictor for the hurdle part
+    * Returns:
+    *   a scalar to be added to the log posterior
+    */
+    real hurdle_lognormal_logit_lpdf(real y, real mu, real sigma, real hu) {
+        if (y == 0) {
+        return bernoulli_logit_lpmf(1 | hu);
+        } else {
+        return bernoulli_logit_lpmf(0 | hu) +
+                lognormal_lpdf(y | mu, sigma);
+        }
+    }    
+
     int ordinal_normal_rng(real mu, real sigma, vector cutpoints)
     {
         int K = size(cutpoints) + 1;
@@ -79,6 +99,9 @@ parameters {
 
     // Standard deviation of peer review.
     real<lower=0> sigma_review;
+
+    real alpha_nonzero_cit;
+    real beta_nonzero_cit;    
 }
 model {
 
@@ -87,6 +110,9 @@ model {
     sigma_cit ~ exponential(1);
 
     beta ~ exponential(1);
+
+    alpha_nonzero_cit ~ normal(0, 1);
+    beta_nonzero_cit ~ normal(0, 1);    
 
     {
         // The review and citation value for each institution is sampled from a
@@ -101,7 +127,10 @@ model {
         value_paper ~ normal(value_inst[institution_per_paper], sigma_paper_value);
     }
 
-    citation_score ~ normal(beta*value_paper, sigma_cit);
+    for (i in 1:N_papers)
+    {
+        citation_score[i] ~ hurdle_lognormal_logit(log(value_paper[i]), sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+    }
 
     // The actual review scores per paper are sampled from a normal distribution
     // which is centered at the citation value for each paper, with a certain
