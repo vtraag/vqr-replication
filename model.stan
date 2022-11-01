@@ -23,6 +23,25 @@ functions {
         }
     }
 
+    real ordinal_lognormal_lpmf(int review_score, real mu, real sigma, vector cutpoints)
+    {
+        if (review_score <= 1)
+        {
+            // This would be similar to having review_score[0] = -Infinity
+            return lognormal_lcdf(cutpoints[1] | mu, sigma);
+        }
+        else if (review_score > size(cutpoints))
+        {
+            // This would be similar to having review_score[size(cutpoints) + 1] = Infinity
+            return lognormal_lccdf(cutpoints[size(cutpoints)] | mu, sigma);
+        }
+        else
+        {
+            return log_diff_exp(lognormal_lcdf(cutpoints[review_score]     | mu, sigma),
+                                lognormal_lcdf(cutpoints[review_score - 1] | mu, sigma));
+        }  
+    }
+
     // From https://github.com/paul-buerkner/brms/blob/59f3b789d78c741fe2523f3c6df6b54982f89830/inst/chunks/fun_hurdle_lognormal.stan
     /* hurdle lognormal log-PDF of a single response
     * logit parameterization of the hurdle part
@@ -41,7 +60,20 @@ functions {
         return bernoulli_logit_lpmf(1 | hu) +
                 lognormal_lpdf(y | mu, sigma);
         }
-    }    
+    }
+
+    real hurdle_lognormal_logit_rng(real mu, real sigma, real hu)
+    {
+        int nonzero = bernoulli_logit_rng(hu);
+        if (nonzero)
+        {
+            return lognormal_rng(mu, sigma);
+        }
+        else 
+        {
+            return 0.0;
+        }
+    }
 
     int ordinal_normal_rng(real mu, real sigma, vector cutpoints)
     {
@@ -61,6 +93,25 @@ functions {
         // Sample random element with individual probability
         return categorical_rng(prob);
     }
+
+    int ordinal_lognormal_rng(real mu, real sigma, vector cutpoints)
+    {
+        int K = size(cutpoints) + 1;
+        vector[K] prob;
+        vector[K - 1] cum_prob;
+        
+        // Get cumulative probabilities
+        for (i in 1:K - 1)
+            cum_prob[i] = lognormal_cdf(cutpoints[i] | mu, sigma);
+
+        // Get probabilities between cutpoints
+        prob[1] = cum_prob[1];
+        prob[2:K - 1] = cum_prob[2:K - 1] - cum_prob[1:K - 2];
+        prob[K] = 1 - cum_prob[K - 1];
+
+        // Sample random element with individual probability
+        return categorical_rng(prob);
+    }    
 }
 data {
     int<lower=0> N_reviews; // Number of reviews
@@ -79,7 +130,7 @@ transformed data {
     ordered[K_review_score_points-1] review_cutpoints;
     for (i in 1:(K_review_score_points - 1))
     {
-        review_cutpoints[i] = inv_Phi( to_real(i)/K_review_score_points );
+        review_cutpoints[i] = exp(inv_Phi( to_real(i)/K_review_score_points ));
     }
 }
 parameters {
@@ -91,8 +142,10 @@ parameters {
 
     real<lower=0> sigma_paper_value;
 
+    real alpha;
+
     // Coefficient of citation
-    real<lower=0> beta;
+    real beta;
 
     // Standard deviation of citation
     real<lower=0> sigma_cit;
@@ -109,7 +162,8 @@ model {
     sigma_review ~ exponential(1);
     sigma_cit ~ exponential(1);
 
-    beta ~ exponential(1);
+    alpha ~ normal(0, 1);
+    beta ~ normal(0, 1);
 
     alpha_nonzero_cit ~ normal(0, 1);
     beta_nonzero_cit ~ normal(0, 1);    
@@ -129,7 +183,7 @@ model {
 
     for (i in 1:N_papers)
     {
-        citation_score[i] ~ hurdle_lognormal_logit(log(value_paper[i]), sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+        citation_score[i] ~ hurdle_lognormal_logit(alpha + beta*value_paper[i], sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -137,7 +191,7 @@ model {
     // uncertainty.
     for (i in 1:N_reviews)
     {
-        review_score[i] ~ ordinal_normal(value_paper[paper_per_review[i]],
+        review_score[i] ~ ordinal_lognormal(value_paper[paper_per_review[i]],
                                          sigma_review,
                                          review_cutpoints);
     }
@@ -146,10 +200,14 @@ generated quantities {
     array[N_papers] int review_score_ppc;
     array[N_papers] real citation_ppc;
 
-    citation_ppc = normal_rng(beta*value_paper, sigma_cit);
-
     for (i in 1:N_papers)
     {
-        review_score_ppc[i] = ordinal_normal_rng(value_paper[i], sigma_review, review_cutpoints);
+        review_score_ppc[i] = ordinal_lognormal_rng(value_paper[i], sigma_review, review_cutpoints);
+
+
+        citation_ppc[i] = hurdle_lognormal_logit_rng(alpha + beta*value_paper[i],
+                                            sigma_cit,
+                                            alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+
     }
 }
