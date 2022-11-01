@@ -54,10 +54,7 @@ parameters {
     real<lower=0> sigma_paper_value;
 
     // Coefficient of citation
-    real<lower=0> beta_cit;
-
-    // Coefficient of peer review
-    real<lower=0> beta_review;
+    real<lower=0> beta;
 
     // Standard deviation of citation
     real<lower=0> sigma_cit;
@@ -71,8 +68,7 @@ model {
     sigma_review ~ exponential(1);
     sigma_cit ~ exponential(1);
 
-    beta_cit ~ exponential(1);
-    beta_review ~ exponential(1);
+    beta ~ exponential(1);
 
     {
         // The review and citation value for each institution is sampled from a
@@ -87,7 +83,7 @@ model {
         value_paper ~ normal(value_inst[institution_per_paper], sigma_paper_value);
     }
 
-    citation_score ~ normal(beta_cit*value_paper, sigma_cit);
+    citation_score ~ normal(beta*value_paper, sigma_cit);
 
     // The actual review scores per paper are sampled from a normal distribution
     // which is centered at the citation value for each paper, with a certain
@@ -95,7 +91,7 @@ model {
     for (i in 1:N_reviews)
     {
         review_score[i] ~ ordinal_normal(review_cutpoints,
-                                         beta_review*value_paper[paper_per_review[i]],
+                                         value_paper[paper_per_review[i]],
                                          sigma_review);
     }
 }
