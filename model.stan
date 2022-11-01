@@ -23,6 +23,24 @@ functions {
         }
     }
 
+    int ordinal_normal_rng(real mu, real sigma, vector cutpoints)
+    {
+        int K = size(cutpoints) + 1;
+        vector[K] prob;
+        vector[K - 1] cum_prob;
+        
+        // Get cumulative probabilities
+        for (i in 1:K - 1)
+            cum_prob[i] = normal_cdf(cutpoints[i] | mu, sigma);
+
+        // Get probabilities between cutpoints
+        prob[1] = cum_prob[1];
+        prob[2:K - 1] = cum_prob[2:K - 1] - cum_prob[1:K - 2];
+        prob[K] = 1 - cum_prob[K - 1];
+
+        // Sample random element with individual probability
+        return categorical_rng(prob);
+    }
 }
 data {
     int<lower=0> N_reviews; // Number of reviews
@@ -93,5 +111,13 @@ model {
         review_score[i] ~ ordinal_normal(value_paper[paper_per_review[i]],
                                          sigma_review,
                                          review_cutpoints);
+    }
+}
+generated quantities {
+    array[N_papers] int review_score_ppc;
+
+    for (i in 1:N_papers)
+    {
+        review_score_ppc[i] = ordinal_normal_rng(value_paper[i], sigma_review, review_cutpoints);
     }
 }
