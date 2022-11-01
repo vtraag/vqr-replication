@@ -79,6 +79,7 @@ summary_df = fit.summary()
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+sns.distplot(draws_df['alpha'])
 sns.distplot(draws_df['beta'])
 
 #%%
@@ -89,6 +90,13 @@ sns.distplot(draws_df['sigma_review'])
 #%%
 sns.pairplot(draws_df[['sigma_cit', 
                        'sigma_review']])
+
+#%%
+sns.distplot(draws_df['alpha_nonzero_cit'])
+sns.distplot(draws_df['beta_nonzero_cit'])
+
+#%%
+sns.distplot(draws_df['citation_ppc[1]'])
 
 #%%
 def extract_variable(df, variable):
@@ -129,9 +137,41 @@ plt.ylabel('Posterior predicted review score')
 
 #%%
 
+value_df = extract_variable(summary_df, 'value_paper')
+
+plt.plot(paper_df['REV_SCORE'], value_df['Mean'], '.')
+
+plt.xlabel('Observed review score')
+plt.ylabel('Inferred paper value')
+
+#%%
+
+value_df = extract_variable(summary_df, 'value_paper')
+
+plt.plot(paper_df['ncs'], np.exp(value_df['Mean']), '.')
+
+plt.xlabel('Observed review score')
+plt.ylabel('Inferred paper value')
+
+#%%
+
 citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
 
-plt.plot(paper_df['ncs'], citation_ppc_df['Mean'], '.')
-
+plt.plot(paper_df['ncs'], citation_ppc_df['50%'], '.')
+# plt.errorbar(x=paper_df['ncs'], 
+#              y=citation_ppc_df['50%'], 
+#              yerr=citation_ppc_df[['5%','95%']].T,
+#              fmt='.')
+# plt.xscale('log')
+# plt.yscale('log')
 plt.xlabel('Observed citation score')
+plt.ylabel('Posterior predicted citation score')
+
+#%%
+
+citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
+value_df = extract_variable(summary_df, 'value_paper')
+
+plt.plot(np.exp(-1 + value_df['50%']), citation_ppc_df['50%'], '.')
+plt.xlabel('Inferred value')
 plt.ylabel('Posterior predicted citation score')
