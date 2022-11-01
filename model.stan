@@ -36,9 +36,9 @@ functions {
     */
     real hurdle_lognormal_logit_lpdf(real y, real mu, real sigma, real hu) {
         if (y == 0) {
-        return bernoulli_logit_lpmf(1 | hu);
+        return bernoulli_logit_lpmf(0 | hu);
         } else {
-        return bernoulli_logit_lpmf(0 | hu) +
+        return bernoulli_logit_lpmf(1 | hu) +
                 lognormal_lpdf(y | mu, sigma);
         }
     }    
