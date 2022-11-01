@@ -115,6 +115,9 @@ model {
 }
 generated quantities {
     array[N_papers] int review_score_ppc;
+    array[N_papers] real citation_ppc;
+
+    citation_ppc = normal_rng(beta*value_paper, sigma_cit);
 
     for (i in 1:N_papers)
     {
