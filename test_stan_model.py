@@ -36,6 +36,8 @@ paper_df = (metric_df
 paper_df['new_institution_id'] = unique_id(paper_df[['INSTITUTION_ID']])
 paper_df['new_paper_id'] = np.arange(paper_df.shape[0]) + 1
 
+paper_df['REV_SCORE'] = (paper_df['REV_1_SCORE'] + paper_df['REV_2_SCORE'])/2
+
 review_df = (
                 pd.concat([paper_df[['new_paper_id', 'REV_1_SCORE']]\
                            .rename(columns={'REV_1_SCORE': 'review_score'}),
@@ -77,21 +79,59 @@ summary_df = fit.summary()
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-sns.distplot(draws_df['corr_paper[1,2]'])
-sns.distplot(draws_df['corr_inst[1,2]'])
-
-#%%
-plt.plot(draws_df['corr_paper[1,2]'])
-plt.plot(draws_df['corr_inst[1,2]'])
-
-#%%
-sns.pairplot(draws_df[['corr_paper[1,2]', 'corr_inst[1,2]']])
+sns.distplot(draws_df['beta'])
 
 #%%
 
+sns.distplot(draws_df['sigma_cit'])
 sns.distplot(draws_df['sigma_review'])
 
 #%%
+sns.pairplot(draws_df[['sigma_cit', 
+                       'sigma_review']])
 
-sns.distplot(draws_df['value_paper_rev[2]'])
-sns.distplot(draws_df['value_paper_rev[163]'])
+#%%
+def extract_variable(df, variable):
+  """ Extracts a variable from a summary dataframe from stan, and vectorizes
+  the indices. That is, if there is a variable x[1], x[2], etc.. in a stan
+  dataframe, it is extracted by this function to 
+  id1    x
+  1      value
+  2
+  """
+  
+  import re
+  
+  # Find relevant indices (rows in this case)
+  var_re = re.compile(f'{variable}\[[\d,]*\]')
+  variable_index = [idx for idx in df.index if var_re.match(idx) is not None]
+  
+  # Split the name of each matching index, i.e.
+  # variable[1,2] will be split into 1, 2
+  split_variable_indices = [idx[len(variable)+1:-1].split(',')
+                                 for idx in variable_index]
+  
+  variable_df = df.loc[variable_index,]
+  
+  for i, idx in enumerate(zip(*split_variable_indices)):
+    variable_df[f'index{i}'] = list(map(int, idx))
+  
+  return variable_df
+  
+#%%
+
+review_score_ppc_df = extract_variable(summary_df, 'review_score_ppc')
+
+plt.plot(paper_df['REV_SCORE'], review_score_ppc_df['Mean'], '.')
+
+plt.xlabel('Observed review score')
+plt.ylabel('Posterior predicted review score')
+
+#%%
+
+citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
+
+plt.plot(paper_df['ncs'], citation_ppc_df['Mean'], '.')
+
+plt.xlabel('Observed citation score')
+plt.ylabel('Posterior predicted citation score')
