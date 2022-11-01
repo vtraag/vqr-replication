@@ -4,7 +4,7 @@ functions {
         return 1.0*x;
     }
 
-    real ordinal_normal_lpmf(int review_score, vector cutpoints, real mu, real sigma)
+    real ordinal_normal_lpmf(int review_score, real mu, real sigma, vector cutpoints)
     {
         if (review_score <= 1)
         {
@@ -90,8 +90,8 @@ model {
     // uncertainty.
     for (i in 1:N_reviews)
     {
-        review_score[i] ~ ordinal_normal(review_cutpoints,
-                                         value_paper[paper_per_review[i]],
-                                         sigma_review);
+        review_score[i] ~ ordinal_normal(value_paper[paper_per_review[i]],
+                                         sigma_review,
+                                         review_cutpoints);
     }
 }
