@@ -142,8 +142,6 @@ parameters {
 
     real<lower=0> sigma_paper_value;
 
-    real alpha;
-
     // Coefficient of citation
     real beta;
 
@@ -162,7 +160,6 @@ model {
     sigma_review ~ exponential(1);
     sigma_cit ~ exponential(1);
 
-    alpha ~ normal(0, 1);
     beta ~ normal(0, 1);
 
     alpha_nonzero_cit ~ normal(0, 1);
@@ -183,7 +180,7 @@ model {
 
     for (i in 1:N_papers)
     {
-        citation_score[i] ~ hurdle_lognormal_logit(alpha + beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -205,7 +202,7 @@ generated quantities {
         review_score_ppc[i] = ordinal_lognormal_rng(log(value_paper[i]) - sigma_review^2/2, sigma_review, review_cutpoints);
 
 
-        citation_ppc[i] = hurdle_lognormal_logit_rng(alpha + beta*log(value_paper[i]) - sigma_cit^2/2,
+        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value_paper[i]) - sigma_cit^2/2,
                                             sigma_cit,
                                             alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
 
