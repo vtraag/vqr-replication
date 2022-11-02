@@ -135,7 +135,7 @@ transformed data {
 }
 parameters {
     // Review value per paper
-    vector[N_papers] value_paper;
+    vector<lower=0>[N_papers] value_paper;
 
     // Citation value for each institute
     vector[N_institutions] value_inst;
@@ -178,7 +178,7 @@ model {
         // distribution centered at the review and citations values for the
         // institutions that the papers is a part of, with a certain correlation
         // between the review and the citation value.
-        value_paper ~ normal(value_inst[institution_per_paper], sigma_paper_value);
+        value_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
     }
 
     for (i in 1:N_papers)
