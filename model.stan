@@ -183,7 +183,7 @@ model {
 
     for (i in 1:N_papers)
     {
-        citation_score[i] ~ hurdle_lognormal_logit(alpha + beta*value_paper[i], sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+        citation_score[i] ~ hurdle_lognormal_logit(alpha + beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -191,7 +191,7 @@ model {
     // uncertainty.
     for (i in 1:N_reviews)
     {
-        review_score[i] ~ ordinal_lognormal(value_paper[paper_per_review[i]],
+        review_score[i] ~ ordinal_lognormal(log(value_paper[paper_per_review[i]]) - sigma_review^2/2,
                                          sigma_review,
                                          review_cutpoints);
     }
@@ -202,10 +202,10 @@ generated quantities {
 
     for (i in 1:N_papers)
     {
-        review_score_ppc[i] = ordinal_lognormal_rng(value_paper[i], sigma_review, review_cutpoints);
+        review_score_ppc[i] = ordinal_lognormal_rng(log(value_paper[i]) - sigma_review^2/2, sigma_review, review_cutpoints);
 
 
-        citation_ppc[i] = hurdle_lognormal_logit_rng(alpha + beta*value_paper[i],
+        citation_ppc[i] = hurdle_lognormal_logit_rng(alpha + beta*log(value_paper[i]) - sigma_cit^2/2,
                                             sigma_cit,
                                             alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
 
