@@ -151,7 +151,6 @@ parameters {
     // Standard deviation of peer review.
     real<lower=0> sigma_review;
 
-    real alpha_nonzero_cit;
     real beta_nonzero_cit;    
 }
 model {
@@ -162,7 +161,6 @@ model {
 
     beta ~ normal(0, 1);
 
-    alpha_nonzero_cit ~ normal(0, 1);
     beta_nonzero_cit ~ normal(0, 1);    
 
     {
@@ -180,7 +178,7 @@ model {
 
     for (i in 1:N_papers)
     {
-        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, beta_nonzero_cit*value_paper[i]);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -204,7 +202,7 @@ generated quantities {
 
         citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value_paper[i]) - sigma_cit^2/2,
                                             sigma_cit,
-                                            alpha_nonzero_cit + beta_nonzero_cit*value_paper[i]);
+                                            beta_nonzero_cit*value_paper[i]);
 
     }
 }
