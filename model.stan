@@ -11,6 +11,36 @@ data {
 
     array[N_papers] real<lower=0> citation_score; // Citation score
     array[N_papers] int<lower=1,upper=N_institutions> institution_per_paper;
+
+    // Toggle to determine whether we want to estimate coefficients
+    // using the overall priors, or whether we want to use priors that
+    // are based on estimates themselves.
+    // 
+    // If we use already estimated coefficients, we can use this
+    // to predict scores through paper values. If we would not use 
+    // estimated coefficients, this would lead to inferior prediction,
+    // and the parameters could not be leanred without acccess to both scores.
+    int use_estimated_priors;
+
+    // The below are estimated coefficients from other models.
+    real<lower=0> sigma_paper_value_mu;
+    real<lower=0> sigma_paper_value_sigma;
+
+    // Coefficient of citation
+    real beta_mu;
+    real<lower=0> beta_sigma;
+
+    // Standard deviation of citation
+    real<lower=0> sigma_cit_mu;
+    real<lower=0> sigma_cit_sigma;
+
+    // Standard deviation of peer review.
+    real<lower=0> sigma_review_mu;
+    real<lower=0> sigma_review_sigma;
+
+    real beta_nonzero_cit_mu;
+    real<lower=0> beta_nonzero_cit_sigma;
+
 }
 transformed data {
     // Cutpoints for the distribution of the review scores
@@ -43,13 +73,26 @@ parameters {
 }
 model {
 
-    sigma_paper_value ~ exponential(1);
-    sigma_review ~ exponential(1);
-    sigma_cit ~ exponential(1);
+    if (use_estimated_priors)
+    {
+        sigma_paper_value ~ normal(sigma_paper_value_mu, sigma_paper_value_sigma);
+        sigma_review ~ normal(sigma_review_mu, sigma_review_sigma);
+        sigma_cit ~ normal(sigma_cit_mu, sigma_cit_sigma);
 
-    beta ~ normal(0, 1);
+        beta ~ normal(beta_mu, beta_sigma);
 
-    beta_nonzero_cit ~ normal(0, 1);    
+        beta_nonzero_cit ~ normal(beta_nonzero_cit_mu, beta_nonzero_cit_sigma);
+    }
+    else
+    {
+        sigma_paper_value ~ exponential(1);
+        sigma_review ~ exponential(1);
+        sigma_cit ~ exponential(1);
+
+        beta ~ normal(0, 1);
+
+        beta_nonzero_cit ~ normal(0, 1);    
+    }
 
     {
         // The review and citation value for each institution is sampled from a

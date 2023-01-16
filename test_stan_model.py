@@ -4,6 +4,12 @@ import os
 import pandas as pd
 import numpy as np
 import datetime as dt
+from pathlib import Path
+#%%
+
+now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
+output_dir = Path(f'../results/{now}')
+
 #%%
 
 stan_file = os.path.abspath('./model.stan')
@@ -57,13 +63,100 @@ data = {
     'review_score': (review_df['review_score'] - 2).astype('int'), # Should be between 1-28
     'paper_per_review': review_df['new_paper_id'],
     'citation_score': paper_df['ncs'],
-    'institution_per_paper': paper_df['new_institution_id']
+    'institution_per_paper': paper_df['new_institution_id'],
+    
+    
+    'use_estimated_priors': 0,
+
+    # The below are estimated coefficients from other models.
+    'sigma_paper_value_mu': 0,
+    'sigma_paper_value_sigma': 1,
+
+    # Coefficient of citation
+    'beta_mu': 0,
+    'beta_sigma': 1,
+
+    # Standard deviation of citation
+    'sigma_cit_mu': 0,
+    'sigma_cit_sigma': 1,
+
+    # Standard deviation of peer review.
+    'sigma_review_mu': 0,
+    'sigma_review_sigma': 1,
+
+    'beta_nonzero_cit_mu': 0,
+    'beta_nonzero_cit_sigma': 1
 }
 
+prior_fit = model.sample(data=data, chains=1, 
+                         output_dir = output_dir / 'prior')
+
 #%%
-now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
-output_dir = f'../results/{now}'
-fit = model.sample(data=data, chains=1, output_dir = output_dir, adapt_delta=0.99)
+
+print(prior_fit.diagnose())
+
+#%%
+
+prior_draws_df = prior_fit.draws_pd()
+
+prior_summary_df = prior_fit.summary()
+
+#%%
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+sns.distplot(prior_draws_df['beta'])
+
+#%%
+
+sns.distplot(prior_draws_df['sigma_paper_value'], label='Value')
+sns.distplot(prior_draws_df['sigma_cit'], label='Citation')
+sns.distplot(prior_draws_df['sigma_review'], label='Review')
+plt.title('$\sigma$')
+plt.legend(loc='best')
+
+#%%
+sns.pairplot(prior_draws_df[['sigma_cit', 
+                       'sigma_review']])
+
+#%%
+sns.distplot(prior_draws_df['beta_nonzero_cit'])
+
+#%%
+
+data = {
+    'N_reviews':    0,
+    'N_papers':    paper_df.shape[0],
+    'N_institutions':   nuniq(paper_df['new_institution_id']),
+    'review_score': [],
+    'paper_per_review': [],
+    'citation_score': paper_df['ncs'],
+    'institution_per_paper': paper_df['new_institution_id'],
+    
+    'use_estimated_priors': 1,
+
+    # The below are estimated coefficients from other models.
+    'sigma_paper_value_mu': prior_summary_df.loc['sigma_paper_value', 'Mean'],
+    'sigma_paper_value_sigma': prior_summary_df.loc['sigma_paper_value', 'StdDev'],
+
+    # Coefficient of citation
+    'beta_mu': prior_summary_df.loc['beta', 'Mean'],
+    'beta_sigma': prior_summary_df.loc['beta', 'StdDev'],
+
+    # Standard deviation of citation
+    'sigma_cit_mu': prior_summary_df.loc['sigma_cit', 'Mean'],
+    'sigma_cit_sigma': prior_summary_df.loc['sigma_cit', 'StdDev'],
+
+    # Standard deviation of peer review.
+    'sigma_review_mu': prior_summary_df.loc['sigma_review', 'Mean'],
+    'sigma_review_sigma': prior_summary_df.loc['sigma_review', 'StdDev'],
+
+    'beta_nonzero_cit_mu': prior_summary_df.loc['beta_nonzero_cit', 'Mean'],
+    'beta_nonzero_cit_sigma': prior_summary_df.loc['beta_nonzero_cit', 'StdDev']
+}
+
+fit = model.sample(data=data, chains=1, 
+                   output_dir = output_dir / 'predict_citation')
 
 #%%
 
@@ -76,27 +169,10 @@ draws_df = fit.draws_pd()
 summary_df = fit.summary()
 
 #%%
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-sns.distplot(draws_df['alpha'])
-sns.distplot(draws_df['beta'])
-
-#%%
-
-sns.distplot(draws_df['sigma_cit'])
-sns.distplot(draws_df['sigma_review'])
-
-#%%
-sns.pairplot(draws_df[['sigma_cit', 
-                       'sigma_review']])
-
-#%%
-sns.distplot(draws_df['alpha_nonzero_cit'])
-sns.distplot(draws_df['beta_nonzero_cit'])
-
-#%%
-sns.distplot(draws_df['citation_ppc[1]'])
+paper_id = 1
+sns.distplot(prior_draws_df[f'citation_ppc[{paper_id}]'])
+sns.distplot(draws_df[f'citation_ppc[{paper_id}]'])
+plt.axvline(paper_df['ncs'].iloc[paper_id], color='k')
 
 #%%
 def extract_variable(df, variable):
@@ -148,30 +224,22 @@ plt.ylabel('Inferred paper value')
 
 value_df = extract_variable(summary_df, 'value_paper')
 
-plt.plot(paper_df['ncs'], np.exp(value_df['Mean']), '.')
+plt.plot(paper_df['ncs'], value_df['Mean'], '.')
 
-plt.xlabel('Observed review score')
+plt.xlabel('Observed citation score')
 plt.ylabel('Inferred paper value')
 
 #%%
 
 citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
 
-plt.plot(paper_df['ncs'], citation_ppc_df['50%'], '.')
 # plt.errorbar(x=paper_df['ncs'], 
-#              y=citation_ppc_df['50%'], 
-#              yerr=citation_ppc_df[['5%','95%']].T,
-#              fmt='.')
-# plt.xscale('log')
-# plt.yscale('log')
+#               y=citation_ppc_df['50%'], 
+#               yerr=citation_ppc_df[['5%','95%']].T,
+              # fmt='.')
+# plt.plot(paper_df['ncs'], paper_df['ncs'], 'x')
+plt.plot(paper_df['ncs'], citation_ppc_df['50%'], '.')
+plt.xscale('log')
+plt.yscale('log')
 plt.xlabel('Observed citation score')
-plt.ylabel('Posterior predicted citation score')
-
-#%%
-
-citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
-value_df = extract_variable(summary_df, 'value_paper')
-
-plt.plot(np.exp(-1 + value_df['50%']), citation_ppc_df['50%'], '.')
-plt.xlabel('Inferred value')
 plt.ylabel('Posterior predicted citation score')
