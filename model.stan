@@ -51,13 +51,17 @@ data {
 
 }
 transformed data {
+
+    real general_paper_value_sigma = 1.3;
+    real general_paper_value_mu = -general_paper_value_sigma^2/2;
+
     // Cutpoints for the distribution of the review scores
     int K_review_score_points = 28;
     ordered[K_review_score_points-1] review_cutpoints;
 
     for (i in 1:(K_review_score_points - 1))
     {
-        review_cutpoints[i] = exp(inv_Phi( to_real(i)/K_review_score_points ));
+        review_cutpoints[i] = exp(general_paper_value_mu + general_paper_value_sigma*inv_Phi( to_real(i)/K_review_score_points ));
     }
 
     array[N_citation_scores] real<lower=0> raw_citation_score;
@@ -78,7 +82,7 @@ transformed data {
                 percentile = 0.999;
             }
 
-            raw_citation_score[i] = exp(inv_Phi( percentile ));
+            raw_citation_score[i] = exp(general_paper_value_mu + general_paper_value_sigma*inv_Phi( percentile ));
         }
     }
     else
