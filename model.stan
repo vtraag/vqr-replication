@@ -2,15 +2,19 @@ functions {
     #include review_model.stanfunctions
 }
 data {
-    int<lower=0> N_reviews; // Number of reviews
     int<lower=0> N_papers; // Number of papers
     int<lower=0> N_institutions; // Number of institutions
 
-    array[N_reviews] int<lower=1,upper=28> review_score; // Review score per paper
-    array[N_reviews] int<lower=1,upper=N_papers> paper_per_review;
+    int<lower=0> N_review_scores; // Number of reviews
+    int<lower=0> N_citation_scores; // Number of citations scores available
 
-    array[N_papers] real<lower=0> citation_score; // Citation score
     array[N_papers] int<lower=1,upper=N_institutions> institution_per_paper;
+
+    array[N_review_scores] int<lower=1,upper=28> review_score; // Review score per paper
+    array[N_review_scores] int<lower=1,upper=N_papers> paper_per_review_score;
+
+    array[N_citation_scores] real<lower=0> citation_score; // Citation score per paper
+    array[N_citation_scores] int<lower=1,upper=N_papers> paper_per_citation_score;
 
     // Toggle to determine whether we want to estimate coefficients
     // using the overall priors, or whether we want to use priors that
@@ -53,7 +57,7 @@ transformed data {
 }
 parameters {
     // Review value per paper
-    vector<lower=0>[N_papers] value_paper;
+    vector<lower=0>[N_papers] value_per_paper;
 
     // Citation value for each institute
     vector[N_institutions] value_inst;
@@ -104,22 +108,28 @@ model {
         // distribution centered at the review and citations values for the
         // institutions that the papers is a part of, with a certain correlation
         // between the review and the citation value.
-        value_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
+        value_per_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
     }
 
-    for (i in 1:N_papers)
+    for (i in 1:N_citation_scores)
     {
-        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value_paper[i]) - sigma_cit^2/2, sigma_cit, beta_nonzero_cit*value_paper[i]);
+        real value = value_per_paper[paper_per_citation_score[i]];
+
+        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
+                                                   sigma_cit,
+                                                   beta_nonzero_cit*value);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
     // which is centered at the citation value for each paper, with a certain
     // uncertainty.
-    for (i in 1:N_reviews)
+    for (i in 1:N_review_scores)
     {
-        review_score[i] ~ ordinal_lognormal(log(value_paper[paper_per_review[i]]) - sigma_review^2/2,
-                                         sigma_review,
-                                         review_cutpoints);
+        real value = value_per_paper[paper_per_review_score[i]];
+
+        review_score[i] ~ ordinal_lognormal(log(value) - sigma_review^2/2,
+                                            sigma_review,
+                                            review_cutpoints);
     }
 }
 generated quantities {
@@ -128,12 +138,11 @@ generated quantities {
 
     for (i in 1:N_papers)
     {
-        review_score_ppc[i] = ordinal_lognormal_rng(log(value_paper[i]) - sigma_review^2/2, sigma_review, review_cutpoints);
+        review_score_ppc[i] = ordinal_lognormal_rng(log(value_per_paper[i]) - sigma_review^2/2, sigma_review, review_cutpoints);
 
-
-        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value_paper[i]) - sigma_cit^2/2,
+        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value_per_paper[i]) - sigma_cit^2/2,
                                             sigma_cit,
-                                            beta_nonzero_cit*value_paper[i]);
+                                            beta_nonzero_cit*value_per_paper[i]);
 
     }
 }
