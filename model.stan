@@ -16,6 +16,10 @@ data {
     array[N_citation_scores] real<lower=0> citation_score; // Citation score per paper
     array[N_citation_scores] int<lower=1,upper=N_papers> paper_per_citation_score;
 
+    // Toggle to determine whether citation_scores represent percentile scores
+    // or whether they represent (normalised) citation scores.
+    int citation_percentile_score;
+
     // Toggle to determine whether we want to estimate coefficients
     // using the overall priors, or whether we want to use priors that
     // are based on estimates themselves.
@@ -50,10 +54,35 @@ transformed data {
     // Cutpoints for the distribution of the review scores
     int K_review_score_points = 28;
     ordered[K_review_score_points-1] review_cutpoints;
+
     for (i in 1:(K_review_score_points - 1))
     {
         review_cutpoints[i] = exp(inv_Phi( to_real(i)/K_review_score_points ));
     }
+
+    array[N_citation_scores] real<lower=0> raw_citation_score;
+
+    if (citation_percentile_score)
+    {
+        // Assume that the percentile comes from the same distribution
+        // as the review score distribution, and use that to transform
+        // the percentil score to a "raw" score (except for the fact that
+        // we expect it to be normalised).
+        for (i in 1:N_citation_scores)
+        {
+            real percentile = citation_score[i] / 100.0;
+            
+            // We threshold the percentile to avoid infinite values
+            if (percentile >= 1)
+            {
+                percentile = 0.999;
+            }
+
+            raw_citation_score[i] = exp(inv_Phi( percentile ));
+        }
+    }
+    else
+        raw_citation_score = citation_score;
 }
 parameters {
     // Review value per paper
@@ -115,7 +144,7 @@ model {
     {
         real value = value_per_paper[paper_per_citation_score[i]];
 
-        citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
+        raw_citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
                                                    sigma_cit,
                                                    beta_nonzero_cit*value);
     }

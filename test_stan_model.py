@@ -35,7 +35,10 @@ paper_df = (metric_df
                [['INSTITUTION_ID',
                  'REV_1_SCORE',
                  'REV_2_SCORE',
-                 'ncs']]
+                 'ncs',
+                 'njs',
+                 'PERCENTILE_INDICATOR_VALUE',
+                 'PERCENTILE_CITATIONS']]
             .sort_values('INSTITUTION_ID')
            )
 paper_df['new_institution_id'] = unique_id(paper_df[['INSTITUTION_ID']])
@@ -44,7 +47,9 @@ paper_df['new_paper_id'] = np.arange(paper_df.shape[0]) + 1
 paper_df['REV_SCORE'] = (paper_df['REV_1_SCORE'] + paper_df['REV_2_SCORE'])/2
 
 citation_df = (
-                paper_df[['new_paper_id', 'ncs']]
+                paper_df[['new_paper_id', 'PERCENTILE_CITATIONS']]
+                .rename(columns={'PERCENTILE_CITATIONS': 
+                                 'citation_score'})
                 .dropna()
               )
 
@@ -71,8 +76,9 @@ data = {
     'paper_per_review_score': review_df['new_paper_id'],
     
     'N_citation_scores': citation_df.shape[0],
-    'citation_score': citation_df['ncs'],
+    'citation_score': citation_df['citation_score'],
     'paper_per_citation_score': citation_df['new_paper_id'],
+    'citation_percentile_score': 1,
     
     'use_estimated_priors': 0,
 
@@ -142,8 +148,9 @@ data = {
     'paper_per_review_score': [],
     
     'N_citation_scores': citation_df.shape[0],
-    'citation_score': citation_df['ncs'],
+    'citation_score': citation_df['citation_score'],
     'paper_per_citation_score': citation_df['new_paper_id'],
+    'citation_percentile_score': 1,
     
     'use_estimated_priors': 1,
 
@@ -181,11 +188,11 @@ draws_df = fit.draws_pd()
 summary_df = fit.summary()
 
 #%%
-paper_id = 385 # High ncs
-paper_id = 106 # Low ncs
+#paper_id = 385 # High ncs
+#paper_id = 106 # Low ncs
 sns.distplot(prior_draws_df[f'citation_ppc[{paper_id}]'])
 sns.distplot(draws_df[f'citation_ppc[{paper_id}]'])
-plt.axvline(paper_df['ncs'].iloc[paper_id], color='k')
+plt.axvline(citation_df.query(f'new_paper_id == {paper_id}').iloc[0, 1], color='k')
 
 #%%
 def extract_variable(df, variable):
@@ -235,7 +242,7 @@ plt.ylabel('Inferred paper value')
 
 #%%
 
-value_df = extract_variable(summary_df, 'value_paper')
+value_df = extract_variable(summary_df, 'value_per_paper')
 
 plt.plot(paper_df['ncs'], value_df['Mean'], '.')
 
