@@ -258,4 +258,5 @@ for GEV, GEV_df in metric_df.groupby('GEV_id'):
     diagnose_filename = Path(fit.runset.csv_files[0]).stem + '-diagnose.txt'
     with open(fit_dir / 'review_prediction' / diagnose_filename, 'wt') as f:
       f.write(fit.diagnose())
-      
+
+  GEV_df.to_csv(output_dir / GEV / 'papers.csv')
