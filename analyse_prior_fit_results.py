@@ -4,6 +4,7 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 from analysis_functions import extract_variable
+import numpy as np
 
 #%% Set the directory we want to transform the fit results for
 
@@ -13,6 +14,8 @@ results_dir = Path('../results/20230118233207')
 
 inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
+
+metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
 
 #%%
 
@@ -87,3 +90,69 @@ for citation_score in citation_scores:
   plt.xlabel(r'$\sigma$')
   
   plt.savefig(output_dir / 'sigma.pdf', bbox_inches='tight')
+  
+  #%% Create summary dataframe
+  
+  def percentile(n):
+    def percentile_(x):
+      if not isinstance(x,pd.Series):
+        raise ValueError('need Series argument')
+      return np.percentile(x, n)
+    percentile_.__name__ = f'percentile_{n}'
+    return percentile_
+
+  summary_df = draws_df.agg(['mean', 'std', percentile(2.5), percentile(97.5)]).T
+  
+  #%% Plot results for review, observed vs. posterior
+  extract_df = extract_variable(summary_df, 'review_score_ppc', axis='index')
+  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
+                                                 level=1)
+  extract_df= extract_df.sort_index()
+  
+  plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
+
+  plt.xlabel('Observed review score')
+  plt.ylabel('Posterior predicted review score')
+  plt.savefig(output_dir / 'review_score_ppc.pdf', bbox_inches='tight')
+  
+  #%% Plot results for citation, observed vs. posterior
+  extract_df = extract_variable(summary_df, 'citation_ppc', axis='index')
+  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
+                                                 level=1)
+  extract_df= extract_df.sort_index()
+  
+  plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
+  
+  plt.xscale('log')
+  plt.yscale('log')
+  
+  plt.xlabel('Observed citation score')
+  plt.ylabel('Posterior predicted citation score')
+  plt.savefig(output_dir / 'citation_ppc.pdf', bbox_inches='tight')
+    
+  #%% Plot results for observed citations vs. inferred paper value 
+  extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
+  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
+                                                 level=1)
+  extract_df= extract_df.sort_index()
+
+  plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
+  
+  plt.xscale('log')
+  
+  plt.xlabel('Observed citation score')
+  plt.ylabel('Paper value')
+  plt.savefig(output_dir / 'citation_paper_value.pdf', bbox_inches='tight')
+      
+  #%% Plot results for observed review scores vs. inferred paper value 
+  extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
+  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
+                                                 level=1)
+  extract_df= extract_df.sort_index()
+  
+  plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
+  
+  plt.xlabel('Observed review score')
+  plt.ylabel('Paper value')
+  plt.savefig(output_dir / 'review_score_paper_value.pdf', bbox_inches='tight')
+        
