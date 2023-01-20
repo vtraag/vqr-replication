@@ -16,8 +16,18 @@ results_dir = Path('../results/20230118233207')
 inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
 
+metric_df = (metric_df
+             .reset_index()
+             .rename(columns={'index': 'paper_id'})
+            )
+
 metric_df = pd.merge(metric_df, gev_names_df, 
-                     on='GEV_id')
+                     on='GEV_id', how='left')
+
+metric_df = (metric_df
+             .set_index('paper_id')
+             .sort_index()
+            )
 
 metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
 
@@ -36,7 +46,6 @@ for citation_score in citation_scores:
   output_dir = results_dir / 'figures' / citation_score / 'prediction'
   
   output_dir.mkdir(parents=True, exist_ok=True)
-  break
 
   #%% Combine both predictions
   
@@ -46,7 +55,7 @@ for citation_score in citation_scores:
   pred_df = pd.concat([citation_pred_df.rename(columns={'review_score_ppc': 'citation_pred'}), 
                        review_pred_df.rename(columns={'review_score_ppc': 'review_pred'})],
                       axis=1)
-    
+  
   # Reshape the dataframe such that it has the paper identifiers
   # as the index, with the prediction types and the individuals draws
   # as the columns
@@ -92,13 +101,13 @@ for citation_score in citation_scores:
     .tight_layout(w_pad=0))
 
   plt.savefig(output_dir / 'citation_pred.pdf', bbox_inches='tight')
-  #plt.close()
+  plt.close()
   
   #%% Plot results for review, observed vs. posterior
   plt_df = pd.merge(metric_df, summary_pred_df.loc[:,'review_pred'], 
                     left_index=True, right_index=True)
   
-  g = sns.relplot(plt_df, x='REV_1_SCORE', y='mean', 
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
                   alpha=0.4)
 
@@ -107,7 +116,7 @@ for citation_score in citation_scores:
     .tight_layout(w_pad=0))
 
   plt.savefig(output_dir / 'review_pred.pdf', bbox_inches='tight')
-  #plt.close()  
+  plt.close()  
   
   #%% Plot two predicted posteriors versus each other
   plt_df = pd.merge(metric_df, summary_pred_df, 
