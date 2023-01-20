@@ -27,7 +27,7 @@ def extract_variable(df, variable, axis):
     
     variable_df.index = pd.MultiIndex.from_tuples(
       [(variable, ) + tuple(indices) for indices in split_variable_indices])
-  
+    
   elif axis == 'columns' or axis == 1:
 
     variable_columns = [col for col in df.columns if var_re.match(col) is not None]
@@ -41,6 +41,7 @@ def extract_variable(df, variable, axis):
       
     variable_df.columns = pd.MultiIndex.from_tuples(
       [(variable, ) + tuple(indices) for indices in split_variable_columns])
+     
   else:
     raise ValueError(f"Unknown axis: {axis}")
     
