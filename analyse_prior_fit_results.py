@@ -57,7 +57,8 @@ for citation_score in citation_scores:
   plt.xlabel(r'$\beta$')
   
   plt.savefig(output_dir / 'beta.pdf', bbox_inches='tight')
-  
+  plt.close()
+
   #%% Plot results for the various sigma distributions
   
   sigma_paper_value_df = extract_variable(draws_df, 'sigma_paper_value', axis='columns')
@@ -90,7 +91,8 @@ for citation_score in citation_scores:
   plt.xlabel(r'$\sigma$')
   
   plt.savefig(output_dir / 'sigma.pdf', bbox_inches='tight')
-  
+  plt.close()
+
   #%% Create summary dataframe
   
   def percentile(n):
@@ -114,7 +116,8 @@ for citation_score in citation_scores:
   plt.xlabel('Observed review score')
   plt.ylabel('Posterior predicted review score')
   plt.savefig(output_dir / 'review_score_ppc.pdf', bbox_inches='tight')
-  
+  plt.close()
+
   #%% Plot results for citation, observed vs. posterior
   extract_df = extract_variable(summary_df, 'citation_ppc', axis='index')
   extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
@@ -129,7 +132,8 @@ for citation_score in citation_scores:
   plt.xlabel('Observed citation score')
   plt.ylabel('Posterior predicted citation score')
   plt.savefig(output_dir / 'citation_ppc.pdf', bbox_inches='tight')
-    
+  plt.close()
+
   #%% Plot results for observed citations vs. inferred paper value 
   extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
   extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
@@ -143,7 +147,8 @@ for citation_score in citation_scores:
   plt.xlabel('Observed citation score')
   plt.ylabel('Paper value')
   plt.savefig(output_dir / 'citation_paper_value.pdf', bbox_inches='tight')
-      
+  plt.close()
+        
   #%% Plot results for observed review scores vs. inferred paper value 
   extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
   extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
