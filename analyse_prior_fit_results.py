@@ -1,13 +1,11 @@
-#%%
+#%% Load libraries
 import pandas as pd
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 from common import extract_variable, percentile
-import numpy as np
 
 #%% Set the directory we want to transform the fit results for
-
 results_dir = Path('../results/20230118233207')
 
 #%% Load the original data
@@ -15,16 +13,16 @@ results_dir = Path('../results/20230118233207')
 inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
 
+# Ensure the dataframe is correctly sorted
 metric_df.index.name = 'paper_id'
 metric_df = metric_df.sort_index()
 
+# Calculate the average review score
 metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
-
 
 #%%
 
 prediction_type = 'prior'
-
 
 citation_scores = ['ncs', 
                    'njs',
@@ -34,6 +32,7 @@ citation_scores = ['ncs',
 for citation_score in citation_scores:
   draws_df = pd.read_csv(results_dir / citation_score / prediction_type / 'draws.csv')
   
+  # Create output dir
   output_dir = results_dir / 'figures' / citation_score / prediction_type
   output_dir.mkdir(parents=True, exist_ok=True)
   
@@ -92,6 +91,11 @@ for citation_score in citation_scores:
   for y in inbetween_y:
     g.ax.axhline(y, color='gray', linestyle='dotted')
   
+  # Make sure the x-limit are not larger than 2, to limit when
+  # plotting results for the PERCENTILE indicators.
+  xlim = g.ax.get_xlim()
+  g.ax.set_xlim(xlim[0], min(xlim[1], 2))
+  
   plt.xlabel(r'$\sigma$')
   
   plt.savefig(output_dir / 'sigma.pdf', bbox_inches='tight')
@@ -106,9 +110,13 @@ for citation_score in citation_scores:
                                 'review_score_ppc', 
                                 axis='index',
                                 index_dtypes=[int])
-  extract_df= extract_df.sort_index()
+  extract_df = (extract_df
+                .sort_index()
+                .droplevel(level=0, axis='index')
+               )
+  extract_df['observed'] = metric_df['REV_SCORE']
   
-  plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
+  g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)
 
   plt.xlabel('Observed review score')
   plt.ylabel('Posterior predicted review score')
@@ -120,9 +128,13 @@ for citation_score in citation_scores:
                                 'citation_ppc', 
                                 axis='index',
                                 index_dtypes=[int])
-  extract_df= extract_df.sort_index()
+  extract_df = (extract_df
+                .sort_index()
+                .droplevel(level=0, axis='index')
+               )
+  extract_df['observed'] = metric_df[citation_score]
   
-  plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
+  g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)  
   
   plt.xscale('log')
   plt.yscale('log')
@@ -137,9 +149,13 @@ for citation_score in citation_scores:
                                 'value_per_paper', 
                                 axis='index',
                                 index_dtypes=[int])
-  extract_df= extract_df.sort_index()
-
-  plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
+  extract_df = (extract_df
+                .sort_index()
+                .droplevel(level=0, axis='index')
+               )
+  extract_df['observed'] = metric_df[citation_score]
+  
+  g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)    
   
   plt.xscale('log')
   
@@ -153,9 +169,13 @@ for citation_score in citation_scores:
                                 'value_per_paper', 
                                 axis='index',
                                 index_dtypes=[int])
-  extract_df= extract_df.sort_index()
+  extract_df = (extract_df
+                .sort_index()
+                .droplevel(level=0, axis='index')
+               )
+  extract_df['observed'] = metric_df['REV_SCORE']
   
-  plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
+  g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)      
   
   plt.xlabel('Observed review score')
   plt.ylabel('Paper value')
