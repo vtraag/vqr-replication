@@ -3,9 +3,8 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
-from analysis_functions import extract_variable
 import numpy as np
-from common import gev_names_df
+from common import gev_names_df, extract_variable
 
 #%% Set the directory we want to transform the fit results for
 
@@ -16,20 +15,21 @@ results_dir = Path('../results/20230118233207')
 inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
 
+# We call the original index the paper_id
 metric_df = (metric_df
              .reset_index()
              .rename(columns={'index': 'paper_id'})
             )
 
+# Now we merge to get also the GEV names
 metric_df = pd.merge(metric_df, gev_names_df, 
                      on='GEV_id', how='left')
 
+# And we use the paper_id again as the index
 metric_df = (metric_df
              .set_index('paper_id')
              .sort_index()
             )
-
-metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
 
 #%%
 
@@ -39,7 +39,8 @@ citation_scores = ['ncs',
                    'PERCENTILE_CITATIONS']
 
 for citation_score in citation_scores:
-  
+
+  # Load the original draws for the predictions, both from citations and reviews
   citation_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'citation_prediction' / 'draws.csv')
   review_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'review_prediction' / 'draws.csv')
     
@@ -49,13 +50,19 @@ for citation_score in citation_scores:
 
   #%% Combine both predictions
   
-  citation_pred_df = extract_variable(citation_prediction_draws_df, 'review_score_ppc', axis='columns')
-  review_pred_df = extract_variable(review_prediction_draws_df, 'review_score_ppc', axis='columns')
+  citation_pred_df = extract_variable(citation_prediction_draws_df, 
+                                      'review_score_ppc', 
+                                      axis='columns',
+                                      index_dtypes=[int])
+  review_pred_df = extract_variable(review_prediction_draws_df, 
+                                    'review_score_ppc',
+                                    axis='columns',
+                                    index_dtypes=[int])
   
   pred_df = pd.concat([citation_pred_df.rename(columns={'review_score_ppc': 'citation_pred'}), 
                        review_pred_df.rename(columns={'review_score_ppc': 'review_pred'})],
                       axis=1)
-  
+
   # Reshape the dataframe such that it has the paper identifiers
   # as the index, with the prediction types and the individuals draws
   # as the columns
@@ -132,24 +139,6 @@ for citation_score in citation_scores:
   
   plt.savefig(output_dir / 'review_pred_vs_citation_pred.pdf', bbox_inches='tight')
   
-  #%% Calculated absolute difference from REV_2_SCORE
-  
-  abs_diff_df = np.abs(pred_df.subtract(metric_df['REV_2_SCORE'], axis='index'))
-  
-  #%% Calculate summary of absolute differences
-  
-  summary_abs_diff_df = (abs_diff_df
-                         .T
-                         .groupby(level=0)
-                         .agg(['mean'])
-                         .T
-                         .unstack(level=1)
-                         )  
-  
-  #%% Save abs diff summary to file
-  
-  summary_abs_diff_df.to_csv(results_dir / citation_score / 'abs_diff.csv')
-    
   #%% Aggregate to institutional level
   
   inst_metric_df = metric_df.groupby(['INSTITUTION_ID', 'GEV']).mean()
@@ -163,7 +152,7 @@ for citation_score in citation_scores:
 
   inst_pred_df.columns = pd.MultiIndex.from_tuples(c for c in inst_pred_df.columns)
   
-  #%%
+  #%% Summarize at institutional level
   
   summary_inst_pred_df = (inst_pred_df
                          .T
@@ -193,7 +182,7 @@ for citation_score in citation_scores:
   plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'review_pred'], 
                     left_index=True, right_index=True)
   
-  g = sns.relplot(plt_df, x='REV_1_SCORE', y='mean', 
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
                   alpha=0.4)
 
@@ -221,21 +210,3 @@ for citation_score in citation_scores:
   
   plt.savefig(output_dir / 'inst_review_pred_vs_citation_pred.pdf', bbox_inches='tight')
   
-   
-  #%% Calculated absolute difference from REV_2_SCORE
-  
-  inst_abs_diff_df = np.abs(inst_pred_df.subtract(inst_metric_df['REV_2_SCORE'], axis='index'))
-  
-  #%% Calculate summary of absolute differences
-  
-  inst_summary_abs_diff_df = (inst_abs_diff_df
-                         .T
-                         .groupby(level=0)
-                         .agg(['mean'])
-                         .T
-                         .unstack(level=-1)
-                         )  
-  
-  #%% Save abs diff summary to file
-  
-  inst_summary_abs_diff_df.to_csv(results_dir / citation_score / 'inst_abs_diff.csv')  
