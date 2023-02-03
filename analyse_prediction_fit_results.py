@@ -66,7 +66,6 @@ for citation_score in citation_scores:
              )
   
   # Now make sure it is properly sorted
-  pred_df.index = pred_df.index.astype(int) 
   pred_df = pred_df.sort_index(axis='index')
   pred_df = pred_df.sort_index(axis='columns')
 
