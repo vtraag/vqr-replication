@@ -102,9 +102,10 @@ for citation_score in citation_scores:
   summary_df = draws_df.agg(['mean', 'std', percentile(2.5), percentile(97.5)]).T
   
   #%% Plot results for review, observed vs. posterior
-  extract_df = extract_variable(summary_df, 'review_score_ppc', axis='index')
-  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
-                                                 level=1)
+  extract_df = extract_variable(summary_df, 
+                                'review_score_ppc', 
+                                axis='index',
+                                index_dtypes=[int])
   extract_df= extract_df.sort_index()
   
   plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
@@ -115,9 +116,10 @@ for citation_score in citation_scores:
   plt.close()
 
   #%% Plot results for citation, observed vs. posterior
-  extract_df = extract_variable(summary_df, 'citation_ppc', axis='index')
-  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
-                                                 level=1)
+  extract_df = extract_variable(summary_df, 
+                                'citation_ppc', 
+                                axis='index',
+                                index_dtypes=[int])
   extract_df= extract_df.sort_index()
   
   plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
@@ -131,9 +133,10 @@ for citation_score in citation_scores:
   plt.close()
 
   #%% Plot results for observed citations vs. inferred paper value 
-  extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
-  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
-                                                 level=1)
+  extract_df = extract_variable(summary_df, 
+                                'value_per_paper', 
+                                axis='index',
+                                index_dtypes=[int])
   extract_df= extract_df.sort_index()
 
   plt.plot(metric_df[citation_score], extract_df['mean'], '.', alpha=0.4)
@@ -146,9 +149,10 @@ for citation_score in citation_scores:
   plt.close()
         
   #%% Plot results for observed review scores vs. inferred paper value 
-  extract_df = extract_variable(summary_df, 'value_per_paper', axis='index')
-  extract_df.index = extract_df.index.set_levels(extract_df.index.levels[1].astype(int), 
-                                                 level=1)
+  extract_df = extract_variable(summary_df, 
+                                'value_per_paper', 
+                                axis='index',
+                                index_dtypes=[int])
   extract_df= extract_df.sort_index()
   
   plt.plot(metric_df['REV_SCORE'], extract_df['mean'], '.', alpha=0.4)
