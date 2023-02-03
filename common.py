@@ -65,9 +65,6 @@ def extract_variable(df, variable, axis, index_dtypes=None):
     variable_df.index = pd.MultiIndex.from_tuples(
       [(variable, ) + tuple(indices) for indices in split_variable_indices])
     
-    if not index_dtypes is None:
-      variable_df.index = variable_df.index.astype([str] + index_dtypes)
-    
   elif axis == 'columns' or axis == 1:
 
     variable_columns = [col for col in df.columns if var_re.match(col) is not None]
