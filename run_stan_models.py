@@ -219,7 +219,9 @@ for GEV, GEV_df in metric_df.groupby('GEV_id'):
     
     # Then fit the overall model
     fit = model.sample(data=data, chains=chains,
-                             output_dir = fit_dir / 'prior')
+                       output_dir = fit_dir / 'prior',
+                       adapt_delta=0.9,
+                       max_treedepth=20)
     
     # Get summary of fit for later use
     prior_summary_df = fit.summary()
@@ -237,7 +239,9 @@ for GEV, GEV_df in metric_df.groupby('GEV_id'):
   
     # Fit the model and predict review scores
     fit = model.sample(data=data, chains=chains,
-                       output_dir = fit_dir / 'citation_prediction')
+                       output_dir = fit_dir / 'citation_prediction',
+                       adapt_delta=0.9,
+                       max_treedepth=20)
     
     # Save diagnosis to file
     diagnose_filename = Path(fit.runset.csv_files[0]).stem + '-diagnose.txt'
@@ -252,7 +256,9 @@ for GEV, GEV_df in metric_df.groupby('GEV_id'):
     
     # Fit the model and predict review scores    
     fit = model.sample(data=data, chains=chains,
-                       output_dir = fit_dir / 'review_prediction')
+                       output_dir = fit_dir / 'review_prediction',
+                       adapt_delta=0.9,
+                       max_treedepth=20)
     
     # Save diagnosis to file
     diagnose_filename = Path(fit.runset.csv_files[0]).stem + '-diagnose.txt'
