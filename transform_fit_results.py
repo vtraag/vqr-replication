@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from pathlib import Path
+from common import gev_names_df
+
 #%% Set the directory we want to transform the fit results for
 
 results_dir = Path('../results/20230118233207')
@@ -127,21 +129,6 @@ def rename_columns(draws_df, inst_id_df, GEV):
       new_column_name[column] = f'{column}[{GEV}]'
 
   return draws_df.rename(columns=new_column_name)[new_column_name.values()]
-
-#%%
-
-gev_names_df = pd.DataFrame(
-  [['1', "Mathematics and Computer Sciences"],
-  ['2', "Physics"],
-  ['3', "Chemistry"],
-  ['4', "Earth Sciences"],
-  ['5', "Biology"],
-  ['6', "Medicine"],
-  ['7', "Agricultural and veterinary sciences"],
-  ['8b', "Civil Engineering"],
-  ['9', "Industrial and Information Engineering"],
-  ['11b', "Psychology"],
-  ['13', "Economics and Statistics"]], columns=['GEV_id', 'GEV'])
 
 #%%
 
