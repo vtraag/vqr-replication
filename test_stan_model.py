@@ -119,22 +119,30 @@ prior_summary_df = prior_fit.summary()
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-sns.distplot(prior_draws_df['beta'])
 
 #%%
+sns.set_palette('Set1')
 
-sns.distplot(prior_draws_df['sigma_paper_value'], label='Value')
-sns.distplot(prior_draws_df['sigma_cit'], label='Citation')
-sns.distplot(prior_draws_df['sigma_review'], label='Review')
-plt.title('$\sigma$')
+fig, axs = plt.subplots(1, 3, figsize=(9, 3))
+ax = plt.subplot(1, 3, 1)
+sns.distplot(draws_df['beta'])
+plt.xlabel(r'$\beta$')
+plt.yticks([])
+
+ax = plt.subplot(1, 3, 2)
+sns.distplot(draws_df['beta_nonzero_cit'])
+plt.xlabel(r'$\beta_{0^+}$')
+plt.yticks([])
+plt.ylabel('')
+
+ax = plt.subplot(1, 3, 3)
+sns.distplot(draws_df['sigma_paper_value'], label='Value')
+sns.distplot(draws_df['sigma_review'], label='Review')
+sns.distplot(draws_df['sigma_cit'], label='Citation')
+plt.xlabel(r'$\sigma$')
+plt.yticks([])
+plt.ylabel('')
 plt.legend(loc='best')
-
-#%%
-sns.pairplot(prior_draws_df[['sigma_cit', 
-                       'sigma_review']])
-
-#%%
-sns.distplot(prior_draws_df['beta_nonzero_cit'])
 
 #%%
 
