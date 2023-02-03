@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
-from analysis_functions import extract_variable
+from common import extract_variable, percentile
 import numpy as np
 
 #%% Set the directory we want to transform the fit results for
@@ -99,14 +99,6 @@ for citation_score in citation_scores:
 
   #%% Create summary dataframe
   
-  def percentile(n):
-    def percentile_(x):
-      if not isinstance(x,pd.Series):
-        raise ValueError('need Series argument')
-      return np.percentile(x, n)
-    percentile_.__name__ = f'percentile_{n}'
-    return percentile_
-
   summary_df = draws_df.agg(['mean', 'std', percentile(2.5), percentile(97.5)]).T
   
   #%% Plot results for review, observed vs. posterior

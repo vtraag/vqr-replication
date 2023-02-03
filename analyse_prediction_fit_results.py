@@ -4,7 +4,7 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
-from common import gev_names_df, extract_variable
+from common import gev_names_df, extract_variable, percentile
 
 #%% Set the directory we want to transform the fit results for
 
@@ -77,14 +77,6 @@ for citation_score in citation_scores:
   pred_df = pred_df.sort_index(axis='columns')
 
   #%% Create summary dataframe
-  
-  def percentile(n):
-    def percentile_(x):
-      if not isinstance(x,pd.Series):
-        raise ValueError('need Series argument')
-      return np.percentile(x, n)
-    percentile_.__name__ = f'percentile_{n}'
-    return percentile_
 
   summary_pred_df = (pred_df
                      .T

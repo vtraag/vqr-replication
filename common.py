@@ -90,3 +90,12 @@ def extract_variable(df, variable, axis, index_dtypes=None):
     raise ValueError(f"Unknown axis: {axis}")
     
   return variable_df
+
+def percentile(n):
+  """"Named percentile function to be used for aggregation of pandas DataFrames"""
+  def percentile_(x):
+    if not isinstance(x,pd.Series):
+      raise ValueError('need Series argument')
+    return np.percentile(x, n)
+  percentile_.__name__ = f'percentile_{n}'
+  return percentile_
