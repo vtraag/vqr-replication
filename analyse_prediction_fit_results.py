@@ -3,7 +3,6 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
-import numpy as np
 from common import gev_names_df, extract_variable, percentile
 
 #%% Set the directory we want to transform the fit results for
