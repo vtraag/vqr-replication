@@ -15,7 +15,11 @@ results_dir = Path('../results/20230118233207')
 inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
 
+metric_df.index.name = 'paper_id'
+metric_df = metric_df.sort_index()
+
 metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
+
 
 #%%
 
