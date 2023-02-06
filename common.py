@@ -100,3 +100,24 @@ def percentile(n):
     return np.percentile(x, n)
   percentile_.__name__ = f'percentile_{n}'
   return percentile_
+
+from scipy import stats
+
+#%% Define distributions
+def normal(mu, sigma):
+  return stats.norm(loc=mu, scale=sigma)
+
+def exponential(inv_rate):
+  return stats.expon(scale=inv_rate)
+
+def lognormal(mu, sigma):
+  return stats.lognorm(scale=np.exp(mu), s=sigma)
+
+#%% Define functions for creating unique IDs
+
+def unique_id(df, start_id=1):
+    """ Create unique identifiers for each unique row in df."""
+    return df.groupby(list(df.columns)).ngroup() + start_id
+
+def nuniq(df):
+    return df.drop_duplicates().shape[0]

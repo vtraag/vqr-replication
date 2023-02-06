@@ -5,15 +5,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from pathlib import Path
-
-#%% Define functions for creating unique IDs
-
-def unique_id(df, start_id=1):
-    """ Create unique identifiers for each unique row in df."""
-    return df.groupby(list(df.columns)).ngroup() + start_id
-
-def nuniq(df):
-    return df.drop_duplicates().shape[0]
+from common import unique_id, nuniq
 
 #%% Define function for preparing the data
 

@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from pathlib import Path
+from common import unique_id, nuniq
+
 #%%
 
 now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -22,13 +24,6 @@ inst_df = pd.read_csv('../data/public/institutional.csv')
 metric_df = pd.read_csv('../data/public/metrics.csv')
 
 #%%
-
-def unique_id(df, start_id=1):
-    """ Create unique identifiers for each unique row in df."""
-    return df.groupby(list(df.columns)).ngroup() + start_id
-
-def nuniq(df):
-    return df.drop_duplicates().shape[0]
 
 paper_df = (metric_df
             .query('GEV_id == "4"')\
@@ -125,20 +120,20 @@ sns.set_palette('Set1')
 
 fig, axs = plt.subplots(1, 3, figsize=(9, 3))
 ax = plt.subplot(1, 3, 1)
-sns.distplot(draws_df['beta'])
+sns.distplot(prior_draws_df['beta'])
 plt.xlabel(r'$\beta$')
 plt.yticks([])
 
 ax = plt.subplot(1, 3, 2)
-sns.distplot(draws_df['beta_nonzero_cit'])
+sns.distplot(prior_draws_df['beta_nonzero_cit'])
 plt.xlabel(r'$\beta_{0^+}$')
 plt.yticks([])
 plt.ylabel('')
 
 ax = plt.subplot(1, 3, 3)
-sns.distplot(draws_df['sigma_paper_value'], label='Value')
-sns.distplot(draws_df['sigma_review'], label='Review')
-sns.distplot(draws_df['sigma_cit'], label='Citation')
+sns.distplot(prior_draws_df['sigma_paper_value'], label='Value')
+sns.distplot(prior_draws_df['sigma_review'], label='Review')
+sns.distplot(prior_draws_df['sigma_cit'], label='Citation')
 plt.xlabel(r'$\sigma$')
 plt.yticks([])
 plt.ylabel('')
@@ -197,9 +192,9 @@ summary_df = fit.summary()
 
 #%%
 #paper_id = 385 # High ncs
-#paper_id = 106 # Low ncs
-sns.distplot(prior_draws_df[f'citation_ppc[{paper_id}]'])
-sns.distplot(draws_df[f'citation_ppc[{paper_id}]'])
+paper_id = 106 # Low ncs
+sns.distplot(100*prior_draws_df[f'citation_ppc[{paper_id}]'])
+sns.distplot(100*draws_df[f'citation_ppc[{paper_id}]'])
 plt.axvline(citation_df.query(f'new_paper_id == {paper_id}').iloc[0, 1], color='k')
 
 #%%
@@ -266,8 +261,8 @@ citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
 #               yerr=citation_ppc_df[['5%','95%']].T,
               # fmt='.')
 # plt.plot(paper_df['ncs'], paper_df['ncs'], 'x')
-plt.plot(paper_df['ncs'], citation_ppc_df['50%'], '.')
-plt.xscale('log')
-plt.yscale('log')
+plt.plot(100*paper_df['PERCENTILE_CITATIONS'], citation_ppc_df['50%'], '.')
+# plt.xscale('log')
+# plt.yscale('log')
 plt.xlabel('Observed citation score')
 plt.ylabel('Posterior predicted citation score')
