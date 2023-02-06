@@ -77,6 +77,10 @@ transformed data {
             real percentile = citation_score[i] / 100.0;
             
             // We threshold the percentile to avoid infinite values
+            if (percentile <= 0)
+            {
+                percentile = 0.001;
+            }            
             if (percentile >= 1)
             {
                 percentile = 0.999;
@@ -178,8 +182,12 @@ generated quantities {
                                                     review_cutpoints);
 
         citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value) - sigma_cit^2/2,
-                                            sigma_cit,
+                                                     sigma_cit,
                                                      beta_nonzero_cit*log(value));
 
+        if (citation_percentile_score)
+        {
+            citation_ppc[i] = lognormal_cdf(citation_ppc[i], general_paper_value_mu, general_paper_value_sigma);
+        }
     }
 }
