@@ -261,7 +261,7 @@ citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
 #               yerr=citation_ppc_df[['5%','95%']].T,
               # fmt='.')
 # plt.plot(paper_df['ncs'], paper_df['ncs'], 'x')
-plt.plot(100*paper_df['PERCENTILE_CITATIONS'], citation_ppc_df['50%'], '.')
+plt.plot(paper_df['PERCENTILE_CITATIONS'], 100*citation_ppc_df['50%'], '.')
 # plt.xscale('log')
 # plt.yscale('log')
 plt.xlabel('Observed citation score')
