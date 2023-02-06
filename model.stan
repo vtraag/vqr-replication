@@ -150,7 +150,7 @@ model {
 
         raw_citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
                                                    sigma_cit,
-                                                   beta_nonzero_cit*value);
+                                                   beta_nonzero_cit*log(value));
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -171,11 +171,15 @@ generated quantities {
 
     for (i in 1:N_papers)
     {
-        review_score_ppc[i] = ordinal_lognormal_rng(log(value_per_paper[i]) - sigma_review^2/2, sigma_review, review_cutpoints);
+        real value = value_per_paper[i];
 
-        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value_per_paper[i]) - sigma_cit^2/2,
+        review_score_ppc[i] = ordinal_lognormal_rng(log(value) - sigma_review^2/2, 
+                                                    sigma_review, 
+                                                    review_cutpoints);
+
+        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value) - sigma_cit^2/2,
                                             sigma_cit,
-                                            beta_nonzero_cit*value_per_paper[i]);
+                                                     beta_nonzero_cit*log(value));
 
     }
 }
