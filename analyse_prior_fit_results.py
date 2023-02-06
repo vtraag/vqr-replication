@@ -136,6 +136,7 @@ for citation_score in citation_scores:
   
   g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)  
   
+  if not 'PERCENTILE' in citation_score:
   plt.xscale('log')
   plt.yscale('log')
   
@@ -157,6 +158,7 @@ for citation_score in citation_scores:
   
   g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)    
   
+  if not 'PERCENTILE' in citation_score:  
   plt.xscale('log')
   
   plt.xlabel('Observed citation score')
@@ -180,4 +182,4 @@ for citation_score in citation_scores:
   plt.xlabel('Observed review score')
   plt.ylabel('Paper value')
   plt.savefig(output_dir / 'review_score_paper_value.pdf', bbox_inches='tight')
-        
+  plt.close()
