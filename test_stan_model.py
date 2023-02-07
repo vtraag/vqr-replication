@@ -93,6 +93,9 @@ data = {
     'sigma_review_mu': 0,
     'sigma_review_sigma': 1,
 
+    'alpha_nonzero_cit_mu': 0,
+    'alpha_nonzero_cit_sigma': 1,
+    
     'beta_nonzero_cit_mu': 0,
     'beta_nonzero_cit_sigma': 1
 }
@@ -173,6 +176,9 @@ data = {
     'sigma_review_mu': prior_summary_df.loc['sigma_review', 'Mean'],
     'sigma_review_sigma': prior_summary_df.loc['sigma_review', 'StdDev'],
 
+    'alpha_nonzero_cit_mu': prior_summary_df.loc['alpha_nonzero_cit', 'Mean'],
+    'alpha_nonzero_cit_sigma': prior_summary_df.loc['alpha_nonzero_cit', 'StdDev'],
+    
     'beta_nonzero_cit_mu': prior_summary_df.loc['beta_nonzero_cit', 'Mean'],
     'beta_nonzero_cit_sigma': prior_summary_df.loc['beta_nonzero_cit', 'StdDev']
 }
