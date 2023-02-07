@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from pathlib import Path
-from common import unique_id, nuniq
+from common import unique_id, nuniq, extract_variable
 
 #%%
 
@@ -197,37 +197,10 @@ sns.distplot(100*prior_draws_df[f'citation_ppc[{paper_id}]'])
 sns.distplot(100*draws_df[f'citation_ppc[{paper_id}]'])
 plt.axvline(citation_df.query(f'new_paper_id == {paper_id}').iloc[0, 1], color='k')
 
-#%%
-def extract_variable(df, variable):
-  """ Extracts a variable from a summary dataframe from stan, and vectorizes
-  the indices. That is, if there is a variable x[1], x[2], etc.. in a stan
-  dataframe, it is extracted by this function to 
-  id1    x
-  1      value
-  2
-  """
-  
-  import re
-  
-  # Find relevant indices (rows in this case)
-  var_re = re.compile(f'{variable}\[[\d,]*\]')
-  variable_index = [idx for idx in df.index if var_re.match(idx) is not None]
-  
-  # Split the name of each matching index, i.e.
-  # variable[1,2] will be split into 1, 2
-  split_variable_indices = [idx[len(variable)+1:-1].split(',')
-                                 for idx in variable_index]
-  
-  variable_df = df.loc[variable_index,]
-  
-  for i, idx in enumerate(zip(*split_variable_indices)):
-    variable_df[f'index{i}'] = list(map(int, idx))
-  
-  return variable_df
   
 #%%
 
-review_score_ppc_df = extract_variable(summary_df, 'review_score_ppc')
+review_score_ppc_df = extract_variable(summary_df, 'review_score_ppc', axis='index')
 
 plt.plot(paper_df['REV_SCORE'], review_score_ppc_df['Mean'], '.')
 
@@ -236,7 +209,7 @@ plt.ylabel('Posterior predicted review score')
 
 #%%
 
-value_df = extract_variable(summary_df, 'value_per_paper')
+value_df = extract_variable(summary_df, 'value_per_paper', axis='index')
 
 plt.plot(paper_df['REV_SCORE'], value_df['Mean'], '.')
 
@@ -245,7 +218,7 @@ plt.ylabel('Inferred paper value')
 
 #%%
 
-value_df = extract_variable(summary_df, 'value_per_paper')
+value_df = extract_variable(summary_df, 'value_per_paper', axis='index')
 
 plt.plot(paper_df['ncs'], value_df['Mean'], '.')
 
@@ -254,7 +227,7 @@ plt.ylabel('Inferred paper value')
 
 #%%
 
-citation_ppc_df = extract_variable(summary_df, 'citation_ppc')
+citation_ppc_df = extract_variable(summary_df, 'citation_ppc', axis='index')
 
 # plt.errorbar(x=paper_df['ncs'], 
 #               y=citation_ppc_df['50%'], 
