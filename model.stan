@@ -134,21 +134,21 @@ model {
     }
     else
     {
-        sigma_review ~ exponential(1);
-        sigma_cit ~ exponential(1);
+        sigma_review ~ std_normal();
+        sigma_cit ~ std_normal();
 
-        beta ~ normal(0, 1);
+        beta ~ std_normal();
 
-        alpha_nonzero_cit ~ normal(0, 1);
-        beta_nonzero_cit ~ normal(0, 1);
+        alpha_nonzero_cit ~ std_normal();
+        beta_nonzero_cit ~ std_normal();
     }
 
     {
         // The review and citation value for each institution is sampled from a
         // normal distribution centered at 0, with a certain correlation between
         // the review and the citation value.
-        value_inst ~ normal(0, 1);
-        sigma_value_inst ~ exponential(1);
+        value_inst ~ std_normal();
+        sigma_value_inst ~ std_normal();
 
         // The review and citation value for each paper is sampled from a normal
         // distribution centered at the review and citations values for the
