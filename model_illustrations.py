@@ -20,7 +20,7 @@ sigma = 1.3
 dist = lognormal(-sigma**2/2, sigma)
 
 K = 28
-cutoffs = [dist.ppf((i+1)/K) for i in range(K - 2)]
+cutoffs = [dist.ppf((i+1)/K) for i in range(K - 1)]
 
 x = np.linspace(0, 3.5, 1000)
 
@@ -32,7 +32,7 @@ plt.plot(x, dist.pdf(x))
 for i, c in enumerate(cutoffs):
     plt.axvline(c, color='lightgray', linewidth=0.1)
     if i > 22:
-        plt.text(x=c+0.1, y=1, s=f'{i+5}', color='lightgray')
+        plt.text(x=c+0.1, y=1, s=f'{i+3}', color='lightgray')
 
 plt.xlim(0, 3.5)
 plt.ylim(0, 1.7)
@@ -56,8 +56,9 @@ sigma_citation = 0.8
 
 continuous_review_dist = lognormal(np.log(paper_value) - sigma_review**2/2, sigma_review)
 
-review_dist = [0] + [continuous_review_dist.cdf(c) for c in cutoffs] + [1]
-review_dist = np.diff(review_dist)
+review_prob = [0] + [continuous_review_dist.cdf(c) for c in cutoffs] + [1]
+review_prob = np.diff(review_prob)
+review_dist = stats.rv_discrete(name='review', values=(np.arange(3, 31), review_prob))
 
 citation_dist = lognormal(np.log(paper_value) - sigma_citation**2/2, sigma_citation)
 
@@ -89,10 +90,12 @@ ytop = 0.8
 
 ax = axs[1]
 ax.fill_between(x, 0, continuous_review_dist.pdf(x), label='Continuous review', alpha=0.5)
+width = 1*np.diff([0] + cutoffs + [5])
 ax.bar([0] + cutoffs, 
-       height=-review_dist, 
+       height=-review_prob, 
        bottom=ytop,
-       width=0.7*np.diff([0] + cutoffs + [4]),
+       width=width,
+       align='edge',
        alpha=0.5,
        label='Discrete review')
 ax.fill_between(x, 0, citation_dist.pdf(x), label='Citation', alpha=0.5)
@@ -109,8 +112,8 @@ con = ConnectionPatch(xyA=(paper_value, 0), coordsA=axs[0].transData,
 fig.add_artist(con)
 
 secax = ax.secondary_xaxis('top')
-labels = [f'{i + 5}' if i > 18 else '' for i in range(len(cutoffs))]
-secax.set_xticks(cutoffs, labels)
+labels = [f'{i + 3}' if i > 19 else '' for i in range(len(review_prob))]
+secax.set_xticks(([0] + cutoffs) + 0.5*width, labels)
 secax.set_xlabel('Review score', 
                  bbox=dict(boxstyle='square,pad=0', fc='white', ec='none'))
 
@@ -126,3 +129,53 @@ order = [0,2,1]
 plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order])
 
 plt.savefig(figure_dir / 'model_illustration.pdf', bbox_inches='tight')
+# plt.close()
+
+#%% Illustration of theoretical results using multiple reviewers
+
+sns.set_style('white')
+sns.set_palette('Set1')
+
+convolved_review_probs = []
+convolved_review_probs.append(review_prob)
+for i in range(10):
+    convolved_review_probs.append(np.convolve(convolved_review_probs[-1], review_prob))
+
+convolved_scores = []
+convolved_review_dists = []
+for i, probs in enumerate(convolved_review_probs):
+    scores = np.arange(probs.shape[0])/(i+1) + 3
+    convolved_scores.append(scores)
+    review_dist = stats.rv_discrete(name='review', values=(scores, probs))
+    convolved_review_dists.append(review_dist)
+
+scores = np.arange(3, 31)
+for i in [0, 2, 4]:
+    cdf_scores = convolved_review_dists[i].cdf(scores)
+    pmf_scores = np.diff(np.insert(cdf_scores, 0, 0))
+    plt.bar(scores, pmf_scores, width=1, alpha=0.5, zorder=4-i, 
+            label=f'{i+1} reviewer{"s" if i > 0 else ""}')
+
+plt.legend(loc='best')
+
+plt.xlabel('Reviewer score')
+plt.ylabel('Probability')
+
+plt.savefig(figure_dir / 'multiple_reviewers.pdf', bbox_inches='tight')
+# plt.close()
+
+#%% Show MAD for multiple reviewers
+
+convolved_MAD = []
+mean_review_score = review_dist.mean()
+for dist in convolved_review_dists:
+    mean_MAD = dist.expect(lambda x: np.abs(x - mean_review_score))
+    convolved_MAD.append(mean_MAD)
+
+plt.plot(np.arange(len(convolved_review_dists)) + 1, convolved_MAD, 
+         marker='o')
+plt.xlabel('Number of reviewers')
+plt.ylabel('Expected MAD')
+
+plt.savefig(figure_dir / 'MAD_multiple_reviewers.pdf', bbox_inches='tight')
+# %%
