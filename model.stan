@@ -196,7 +196,7 @@ generated quantities {
 
         if (citation_percentile_score)
         {
-            citation_ppc[i] = lognormal_cdf(citation_ppc[i], general_paper_value_mu, general_paper_value_sigma);
+            citation_ppc[i] = lognormal_cdf(citation_ppc[i] | general_paper_value_mu, general_paper_value_sigma);
         }
     }
 }
