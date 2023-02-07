@@ -44,6 +44,9 @@ data {
     real<lower=0> sigma_review_mu;
     real<lower=0> sigma_review_sigma;
 
+    real alpha_nonzero_cit_mu;
+    real<lower=0> alpha_nonzero_cit_sigma;
+
     real beta_nonzero_cit_mu;
     real<lower=0> beta_nonzero_cit_sigma;
 
@@ -108,6 +111,7 @@ parameters {
     // Standard deviation of peer review.
     real<lower=0> sigma_review;
 
+    real alpha_nonzero_cit;
     real beta_nonzero_cit;
 }
 transformed parameters {
@@ -124,6 +128,8 @@ model {
 
         beta ~ normal(beta_mu, beta_sigma);
 
+        alpha_nonzero_cit ~ normal(alpha_nonzero_cit_mu, alpha_nonzero_cit_sigma);
+        
         beta_nonzero_cit ~ normal(beta_nonzero_cit_mu, beta_nonzero_cit_sigma);
     }
     else
@@ -133,6 +139,7 @@ model {
 
         beta ~ normal(0, 1);
 
+        alpha_nonzero_cit ~ normal(0, 1);
         beta_nonzero_cit ~ normal(0, 1);
     }
 
@@ -156,7 +163,7 @@ model {
 
         raw_citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
                                                    sigma_cit,
-                                                   beta_nonzero_cit*log(value));
+                                                   alpha_nonzero_cit + beta_nonzero_cit*log(value));
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -185,7 +192,7 @@ generated quantities {
 
         citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value) - sigma_cit^2/2,
                                                      sigma_cit,
-                                                     beta_nonzero_cit*log(value));
+                                                     alpha_nonzero_cit + beta_nonzero_cit*log(value));
 
         if (citation_percentile_score)
         {
