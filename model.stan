@@ -94,12 +94,12 @@ transformed data {
 }
 parameters {
     // Review value per paper
-    vector<lower=0>[N_papers] value_per_paper;
+    vector[N_papers] value_per_paper_raw;
 
     // Citation value for each institute
     vector[N_institutions] value_inst;
-
-    real<lower=0> sigma_paper_value;
+    // Citation value for each institute
+    vector<lower=0>[N_institutions] sigma_value_inst;
 
     // Coefficient of citation
     real beta;
@@ -110,13 +110,17 @@ parameters {
     // Standard deviation of peer review.
     real<lower=0> sigma_review;
 
-    real beta_nonzero_cit;    
+    real beta_nonzero_cit;
+}
+transformed parameters {
+    # Use non-centered parameterization
+    vector<lower=0>[N_papers] value_per_paper;
+    value_per_paper = exp(value_per_paper_raw .* sigma_value_inst[institution_per_paper] + value_inst[institution_per_paper]);
 }
 model {
 
     if (use_estimated_priors)
     {
-        sigma_paper_value ~ normal(sigma_paper_value_mu, sigma_paper_value_sigma);
         sigma_review ~ normal(sigma_review_mu, sigma_review_sigma);
         sigma_cit ~ normal(sigma_cit_mu, sigma_cit_sigma);
 
@@ -126,13 +130,12 @@ model {
     }
     else
     {
-        sigma_paper_value ~ exponential(1);
         sigma_review ~ exponential(1);
         sigma_cit ~ exponential(1);
 
         beta ~ normal(0, 1);
 
-        beta_nonzero_cit ~ normal(0, 1);    
+        beta_nonzero_cit ~ normal(0, 1);
     }
 
     {
@@ -140,12 +143,13 @@ model {
         // normal distribution centered at 0, with a certain correlation between
         // the review and the citation value.
         value_inst ~ normal(0, 1);
+        sigma_value_inst ~ exponential(1);
 
         // The review and citation value for each paper is sampled from a normal
         // distribution centered at the review and citations values for the
         // institutions that the papers is a part of, with a certain correlation
         // between the review and the citation value.
-        value_per_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
+        value_per_paper_raw ~ std_normal();
     }
 
     for (i in 1:N_citation_scores)
