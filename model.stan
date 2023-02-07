@@ -31,8 +31,6 @@ data {
     int use_estimated_priors;
 
     // The below are estimated coefficients from other models.
-    real<lower=0> sigma_paper_value_mu;
-    real<lower=0> sigma_paper_value_sigma;
 
     // Coefficient of citation
     real beta_mu;
