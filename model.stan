@@ -115,7 +115,7 @@ parameters {
     real beta_nonzero_cit;
 }
 transformed parameters {
-    # Use non-centered parameterization
+    // Use non-centered parameterization
     vector<lower=0>[N_papers] value_per_paper;
     value_per_paper = exp(value_per_paper_raw .* sigma_value_inst[institution_per_paper] + value_inst[institution_per_paper]);
 }
@@ -129,7 +129,7 @@ model {
         beta ~ normal(beta_mu, beta_sigma);
 
         alpha_nonzero_cit ~ normal(alpha_nonzero_cit_mu, alpha_nonzero_cit_sigma);
-        
+
         beta_nonzero_cit ~ normal(beta_nonzero_cit_mu, beta_nonzero_cit_sigma);
     }
     else
