@@ -123,6 +123,10 @@ def prepare_data(paper_df, citation_score, prediction_type: Literal['none', 'cit
     data |= {
               'use_estimated_priors': 0,
 
+              # The below are estimated coefficients from other models.
+              'sigma_paper_value_mu': 0,
+              'sigma_paper_value_sigma': 1,
+
               # Coefficient of citation
               'beta_mu': 0,
               'beta_sigma': 1,
@@ -148,6 +152,10 @@ def prepare_data(paper_df, citation_score, prediction_type: Literal['none', 'cit
     # that we estimated on the full model.
     data |= {
               'use_estimated_priors': 1,
+
+              # The below are estimated coefficients from other models.
+              'sigma_paper_value_mu': prior_summary_df.loc['sigma_paper_value', 'Mean'],
+              'sigma_paper_value_sigma': prior_summary_df.loc['sigma_paper_value', 'StdDev'],
 
               # Coefficient of citation
               'beta_mu': prior_summary_df.loc['beta', 'Mean'],
