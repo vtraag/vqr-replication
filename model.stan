@@ -160,7 +160,7 @@ model {
 
         raw_citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
                                                    sigma_cit,
-                                                   alpha_nonzero_cit + beta_nonzero_cit*log(value));
+                                                   alpha_nonzero_cit + beta_nonzero_cit*value);
     }
 
     // The actual review scores per paper are sampled from a normal distribution
@@ -189,7 +189,7 @@ generated quantities {
 
         citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value) - sigma_cit^2/2,
                                                      sigma_cit,
-                                                     alpha_nonzero_cit + beta_nonzero_cit*log(value));
+                                                     alpha_nonzero_cit + beta_nonzero_cit*value);
 
         if (citation_percentile_score)
         {
