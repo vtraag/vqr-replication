@@ -97,7 +97,7 @@ transformed data {
 }
 parameters {
     // Review value per paper
-    vector[N_papers] value_per_paper_raw;
+    vector<lower=0>[N_papers] value_per_paper;
 
     // Citation value for each institute
     vector[N_institutions] value_inst;
@@ -116,11 +116,6 @@ parameters {
 
     real alpha_nonzero_cit;
     real beta_nonzero_cit;
-}
-transformed parameters {
-    // Use non-centered parameterization
-    vector<lower=0>[N_papers] value_per_paper;
-    value_per_paper = exp(value_per_paper_raw .* sigma_paper_value + value_inst[institution_per_paper]);
 }
 model {
 
@@ -157,7 +152,7 @@ model {
     // distribution centered at the review and citations values for the
     // institutions that the papers is a part of, with a certain correlation
     // between the review and the citation value.
-    value_per_paper_raw ~ std_normal();
+    value_per_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
     
     for (i in 1:N_citation_scores)
     {
