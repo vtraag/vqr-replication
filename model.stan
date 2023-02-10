@@ -133,6 +133,7 @@ model {
     }
     else
     {
+        sigma_paper_value ~ std_normal();        
         sigma_review ~ std_normal();
         sigma_cit ~ std_normal();
 
@@ -146,7 +147,6 @@ model {
     // normal distribution centered at 0, with a certain correlation between
     // the review and the citation value.
     value_inst ~ std_normal();
-    sigma_paper_value ~ std_normal();
 
     // The review and citation value for each paper is sampled from a normal
     // distribution centered at the review and citations values for the
