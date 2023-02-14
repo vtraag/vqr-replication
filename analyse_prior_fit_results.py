@@ -39,25 +39,31 @@ for citation_score in citation_scores:
   #%% Plot results for beta distribution
   
   beta_df = extract_variable(draws_df, 'beta', axis='columns')
+  alpha_nonzero_cit_df = extract_variable(draws_df, 'alpha_nonzero_cit', axis='columns')  
   beta_nonzero_cit_df = extract_variable(draws_df, 'beta_nonzero_cit', axis='columns')
   
-  beta_df = pd.concat([beta_df, beta_nonzero_cit_df], axis=1)
+  beta_df = pd.concat([beta_df, alpha_nonzero_cit_df, beta_nonzero_cit_df], axis=1)
   beta_df.columns.names = ['variable', 'GEV']
   
   sns.set_palette('Set1')
   
   g = sns.catplot(beta_df.melt(), x='value', y='GEV', hue='variable',
-              kind='violin',
+              kind='violin', scale='width',
               linewidth=1, alpha=0.8, inner=None,
-              height=5, aspect=1,
+              height=8, aspect=0.7,
               palette='Set1')
   
   yticks = g.ax.get_yticks()
   inbetween_y = (yticks[1:] + yticks[:-1])/2
   for y in inbetween_y:
     g.ax.axhline(y, color='gray', linestyle='dotted')
-  
-  plt.xlabel(r'$\beta$')
+
+  # replace labels
+  new_labels = [r'$\beta$', 
+                r'$\alpha_{0^+}$',
+                r'$\beta_{0^+}$']
+  for t, l in zip(g._legend.texts, new_labels):
+      t.set_text(l)    
   
   plt.savefig(output_dir / 'beta.pdf', bbox_inches='tight')
   plt.close()
@@ -81,7 +87,7 @@ for citation_score in citation_scores:
   sns.set_palette('Set1')
   
   g = sns.catplot(sigma_df.melt(), x='value', y='GEV', hue='variable',
-              kind='violin',
+              kind='violin', scale='width',
               linewidth=1, alpha=0.8, inner=None,
               height=8, aspect=0.7,
               palette='Set1')
