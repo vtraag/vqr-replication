@@ -68,7 +68,7 @@ for citation_score in citation_scores:
 
   abs_diff_df = np.abs(pred_df.subtract(metric_df['REV_2_SCORE'], axis='index'))
   
-  MAD_df = abs_diff_df.groupby(metric_df['GEV']).median()
+  MAD_df = abs_diff_df.groupby(metric_df['GEV']).mean()
 
   MAD_dfs.append(MAD_df)
   
@@ -92,8 +92,8 @@ for citation_score in citation_scores:
                            .div(inst_metric_df['REV_2_SCORE']*inst_metric_df['n_pubs'], axis='index')
                           )
   
-  inst_MAD_df = inst_abs_diff_df.groupby('GEV').median()
-  inst_MAPD_df = inst_perc_abs_diff_df.groupby('GEV').median()
+  inst_MAD_df = inst_abs_diff_df.groupby('GEV').mean()
+  inst_MAPD_df = inst_perc_abs_diff_df.groupby('GEV').mean()
   
   inst_MAD_dfs.append(inst_MAD_df)
   inst_MAPD_dfs.append(inst_MAPD_df)
@@ -117,7 +117,7 @@ pred_df = (pred_df
 
 abs_diff_df = np.abs(pred_df.subtract(metric_df['REV_2_SCORE'], axis='index'))
 
-MAD_df = abs_diff_df.groupby(metric_df['GEV']).median()
+MAD_df = abs_diff_df.groupby(metric_df['GEV']).mean()
 
 MAD_dfs.append(MAD_df)
 
@@ -141,8 +141,8 @@ inst_perc_abs_diff_df = (
                          .div(inst_metric_df['REV_2_SCORE']*inst_metric_df['n_pubs'], axis='index')
                         )
 
-inst_MAD_df = inst_abs_diff_df.groupby('GEV').median()
-inst_MAPD_df = inst_perc_abs_diff_df.groupby('GEV').median()
+inst_MAD_df = inst_abs_diff_df.groupby('GEV').mean()
+inst_MAPD_df = inst_perc_abs_diff_df.groupby('GEV').mean()
 
 inst_MAD_dfs.append(inst_MAD_df)
 inst_MAPD_dfs.append(inst_MAPD_df)
@@ -174,7 +174,7 @@ plt_df = (MAD_df
 sns.catplot(plt_df, 
             x='MAD', y='GEV', hue='variable_0',
             kind='bar', palette='Set1',
-            errorbar=('sd', 1.96),
+            errorbar=('pi', 95),
             height=12, aspect=0.9)
 
 plt.savefig(output_dir / 'MAD_individual.pdf', bbox_inches='tight')
@@ -195,7 +195,7 @@ plt_df = (inst_MAD_df
 sns.catplot(plt_df, 
             x='MAD', y='GEV', hue='variable_0',
             kind='bar', palette='Set1',
-            errorbar=('sd', 1.96),
+            errorbar=('pi', 95),
             height=12, aspect=0.9)
 
 plt.savefig(output_dir / 'MAD_institutional.pdf', bbox_inches='tight')
@@ -218,7 +218,7 @@ plt_df = (inst_MAPD_df
 g = sns.catplot(plt_df, 
             x='MAPD', y='GEV', hue='variable_0',
             kind='bar', palette='Set1',
-            errorbar=('sd', 1.96),
+            errorbar=('pi', 95),
             height=12, aspect=0.9)
 
 g.ax.xaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
