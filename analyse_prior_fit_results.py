@@ -60,8 +60,8 @@ for citation_score in citation_scores:
 
   # replace labels
   new_labels = [r'$\beta$', 
-                r'$\alpha_{0^+}$',
-                r'$\beta_{0^+}$']
+                r'$\alpha_{\bar{0}}$',
+                r'$\beta_{\bar{0}}$']
   for t, l in zip(g._legend.texts, new_labels):
       t.set_text(l)    
   
