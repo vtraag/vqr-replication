@@ -158,7 +158,7 @@ model {
     {
         real value = value_per_paper[paper_per_citation_score[i]];
 
-        raw_citation_score[i] ~ hurdle_lognormal_logit(beta*log(value) - sigma_cit^2/2, 
+        raw_citation_score[i] ~ hurdle_lognormal_logit(log(value) + beta - sigma_cit^2/2, 
                                                    sigma_cit,
                                                    alpha_nonzero_cit + beta_nonzero_cit*value);
     }
@@ -187,7 +187,7 @@ generated quantities {
                                                     sigma_review, 
                                                     review_cutpoints);
 
-        citation_ppc[i] = hurdle_lognormal_logit_rng(beta*log(value) - sigma_cit^2/2,
+        citation_ppc[i] = hurdle_lognormal_logit_rng(log(value) + beta - sigma_cit^2/2,
                                                      sigma_cit,
                                                      alpha_nonzero_cit + beta_nonzero_cit*value);
 
