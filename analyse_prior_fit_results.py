@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from common import extract_variable, percentile
 
 #%% Set the directory we want to transform the fit results for
-results_dir = Path('../results/20230118233207')
+results_dir = Path('../results/20230213201810')
 
 #%% Load the original data
 
@@ -137,8 +137,8 @@ for citation_score in citation_scores:
   g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)  
   
   if not 'PERCENTILE' in citation_score:
-  plt.xscale('log')
-  plt.yscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
   
   plt.xlabel('Observed citation score')
   plt.ylabel('Posterior predicted citation score')
@@ -159,7 +159,7 @@ for citation_score in citation_scores:
   g = sns.scatterplot(extract_df, x='observed', y='mean', alpha=0.4)    
   
   if not 'PERCENTILE' in citation_score:  
-  plt.xscale('log')
+    plt.xscale('log')
   
   plt.xlabel('Observed citation score')
   plt.ylabel('Paper value')

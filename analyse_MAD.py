@@ -8,7 +8,7 @@ from common import gev_names_df, extract_variable
 
 #%% Set the directory we want to transform the fit results for
 
-results_dir = Path('../results/20230118233207')
+results_dir = Path('../results/20230213201810')
 
 #%% Load the original data
 
