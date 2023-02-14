@@ -32,7 +32,7 @@ metric_df = pd.read_csv('../data/public/metrics.csv')
 citation_score = 'ncs'
 
 paper_df = (metric_df
-            .query('GEV_id == "1"')\
+            .query('GEV_id == "6"')\
                [['INSTITUTION_ID',
                  'REV_1_SCORE',
                  'REV_2_SCORE',
@@ -40,6 +40,7 @@ paper_df = (metric_df
                  'njs',
                  'PERCENTILE_INDICATOR_VALUE',
                  'PERCENTILE_CITATIONS']]
+            .sample(frac=0.1)               
             .sort_values('INSTITUTION_ID')
            )
 paper_df['new_institution_id'] = unique_id(paper_df[['INSTITUTION_ID']])
@@ -84,6 +85,8 @@ data = {
     'use_estimated_priors': 0,
 
     # The below are estimated coefficients from other models.
+    'sigma_paper_value_mu': 0,
+    'sigma_paper_value_sigma': 1,
 
     # Coefficient of citation
     'beta_mu': 0,
@@ -177,7 +180,7 @@ citation_ppc_df = extract_variable(prior_summary_df, 'citation_ppc', axis='index
 #               y=citation_ppc_df['50%'], 
 #               yerr=citation_ppc_df[['5%','95%']].T,
               # fmt='.')
-plt.plot(paper_df[citation_score], citation_ppc_df['50%'], '.')
+plt.plot(paper_df[citation_score], citation_ppc_df['Mean'], '.')
 #plt.plot(paper_df['PERCENTILE_CITATIONS'], 100*citation_ppc_df['50%'], '.')
 plt.xscale('log')
 plt.yscale('log')
@@ -226,6 +229,8 @@ data |= {
     'use_estimated_priors': 1,
 
     # The below are estimated coefficients from other models.
+    'sigma_paper_value_mu': prior_summary_df.loc['sigma_paper_value', 'Mean'],
+    'sigma_paper_value_sigma': prior_summary_df.loc['sigma_paper_value', 'StdDev'],
 
     # Coefficient of citation
     'beta_mu': prior_summary_df.loc['beta', 'Mean'],
@@ -261,7 +266,7 @@ summary_df = fit.summary()
 
 #%%
 
-plt.plot(draws_df['beta'])
+plt.plot(draws_df['sigma_paper_value'])
 
 #%%
 #paper_id = 385 # High ncs
@@ -306,7 +311,7 @@ citation_ppc_df = extract_variable(summary_df, 'citation_ppc', axis='index')
 #               y=citation_ppc_df['50%'], 
 #               yerr=citation_ppc_df[['5%','95%']].T,
               # fmt='.')
-plt.plot(paper_df[citation_score], citation_ppc_df['50%'], '.')
+plt.plot(paper_df[citation_score], citation_ppc_df['Mean'], '.')
 # plt.plot(paper_df['PERCENTILE_CITATIONS'], 100*citation_ppc_df['50%'], '.')
 plt.xscale('log')
 plt.yscale('log')
@@ -337,7 +342,9 @@ if (use_estimated_priors):
       'use_estimated_priors': 1,
   
       # The below are estimated coefficients from other models.
-  
+      'sigma_paper_value_mu': prior_summary_df.loc['sigma_paper_value', 'Mean'],
+      'sigma_paper_value_sigma': prior_summary_df.loc['sigma_paper_value', 'StdDev'],
+
       # Coefficient of citation
       'beta_mu': prior_summary_df.loc['beta', 'Mean'],
       'beta_sigma': prior_summary_df.loc['beta', 'StdDev'],
@@ -359,9 +366,11 @@ if (use_estimated_priors):
 else:
   data |= {
       'use_estimated_priors': 0,
-  
+
       # The below are estimated coefficients from other models.
-      
+      'sigma_paper_value_mu': 0,
+      'sigma_paper_value_sigma': 1,
+            
       # Coefficient of citation
       'beta_mu': 0,
       'beta_sigma': 1,
@@ -406,5 +415,17 @@ plt.hist(value_per_paper_df['Mean'])
 
 #%%
 
-sigma_value_inst_df = extract_variable(prior_check_summary_df, 'sigma_value_inst', axis='index')
-plt.hist(sigma_value_inst_df['Mean'])
+plt.plot(value_per_paper_df['Mean'],
+         citation_ppc_df['Mean'],
+         '.')
+plt.xlabel('Value')
+plt.ylabel('Citation')
+
+#%%
+paper_id = 2
+plt.plot(prior_check_draws_df[f'citation_ppc[{paper_id}]'], 
+         prior_check_draws_df[f'value_per_paper[{paper_id}]'], 
+         '.')
+
+#%%
+sns.kdeplot(prior_check_draws_df[f'citation_ppc[{paper_id}]'])
