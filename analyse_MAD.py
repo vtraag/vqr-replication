@@ -100,7 +100,7 @@ for citation_score in citation_scores:
 
 #%% Also add review MAD
 
-draws_df = pd.read_csv(results_dir / citation_score / 'review_prediction' / 'draws.csv')     
+draws_df = pd.read_csv(results_dir / 'ncs' / 'review_prediction' / 'draws.csv')     
 
 # Change format
 pred_df = extract_variable(draws_df, 'review_score_ppc', axis='columns', index_dtypes=[int])
@@ -168,14 +168,25 @@ plt_df = (MAD_df
                            'review_review_pred': 'Review'})
           .melt(value_name='MAD',
                 ignore_index=False)
+          .rename(columns={'variable_0': 'variable'})
           .reset_index()
         )
 
-sns.catplot(plt_df, 
-            x='MAD', y='GEV', hue='variable_0',
+sns.set_context('paper', rc={'lines.linewidth': 0.5,
+                            'grid.linewidth': 0.5,
+                            'axes.linewidth': 0.5,
+                            'xtick.major.width': 0.5,
+                            'ytick.major.width': 0.5,
+                            'patch.linewidth': 1.0})
+sns.set_palette('Set1')
+
+g = sns.catplot(plt_df, 
+            x='MAD', y='GEV', hue='variable',
             kind='bar', palette='Set1',
-            errorbar=('pi', 95),
-            height=12, aspect=0.9)
+            errorbar=('pi', 95), errwidth=0.5,
+            height=5, aspect=1.2)
+sns.move_legend(g, 'upper right')
+g.set_ylabels('')
 
 plt.savefig(output_dir / 'MAD_individual.pdf', bbox_inches='tight')
 
@@ -189,14 +200,17 @@ plt_df = (inst_MAD_df
                            'review_review_pred': 'Review'})
           .melt(value_name='MAD',
                 ignore_index=False)
+          .rename(columns={'variable_0': 'variable'})                
           .reset_index()
         )
 
-sns.catplot(plt_df, 
-            x='MAD', y='GEV', hue='variable_0',
+g = sns.catplot(plt_df, 
+            x='MAD', y='GEV', hue='variable',
             kind='bar', palette='Set1',
-            errorbar=('pi', 95),
-            height=12, aspect=0.9)
+            errorbar=('pi', 95), errwidth=0.5,
+            height=5, aspect=1.2)
+sns.move_legend(g, 'upper right')
+g.set_ylabels('')
 
 plt.savefig(output_dir / 'MAD_institutional.pdf', bbox_inches='tight')
 
@@ -212,14 +226,17 @@ plt_df = (inst_MAPD_df
                            'review_review_pred': 'Review'})
           .melt(value_name='MAPD',
                 ignore_index=False)
+          .rename(columns={'variable_0': 'variable'})                
           .reset_index()
         )
 
 g = sns.catplot(plt_df, 
-            x='MAPD', y='GEV', hue='variable_0',
+            x='MAPD', y='GEV', hue='variable',
             kind='bar', palette='Set1',
-            errorbar=('pi', 95),
-            height=12, aspect=0.9)
+            errorbar=('pi', 95), errwidth=0.5,
+            height=5, aspect=1.2)
+sns.move_legend(g, 'upper right')
+g.set_ylabels('')
 
 g.ax.xaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
 

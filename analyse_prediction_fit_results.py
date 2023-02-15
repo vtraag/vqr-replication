@@ -21,7 +21,7 @@ metric_df = (metric_df
             )
 
 # Now we merge to get also the GEV names
-metric_df = pd.merge(metric_df, gev_names_df, 
+metric_df = pd.merge(metric_df, gev_names_df,
                      on='GEV_id', how='left')
 
 # And we use the paper_id again as the index
@@ -32,9 +32,9 @@ metric_df = (metric_df
 
 #%%
 
-citation_scores = ['ncs', 
+citation_scores = ['ncs',
                    'njs',
-                   'PERCENTILE_INDICATOR_VALUE', 
+                   'PERCENTILE_INDICATOR_VALUE',
                    'PERCENTILE_CITATIONS']
 
 for citation_score in citation_scores:
@@ -42,23 +42,23 @@ for citation_score in citation_scores:
   # Load the original draws for the predictions, both from citations and reviews
   citation_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'citation_prediction' / 'draws.csv')
   review_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'review_prediction' / 'draws.csv')
-    
-  output_dir = results_dir / 'figures' / citation_score / 'prediction'
-  
-  output_dir.mkdir(parents=True, exist_ok=True)
 
-  #%% Combine both predictions
+  output_dir = results_dir / 'figures' / citation_score / 'prediction'
+
+  output_dir.mkdir(parents=True, exist_ok=True)
   
-  citation_pred_df = extract_variable(citation_prediction_draws_df, 
-                                      'review_score_ppc', 
+  #%% Combine both predictions
+
+  citation_pred_df = extract_variable(citation_prediction_draws_df,
+                                      'review_score_ppc',
                                       axis='columns',
                                       index_dtypes=[int])
-  review_pred_df = extract_variable(review_prediction_draws_df, 
+  review_pred_df = extract_variable(review_prediction_draws_df,
                                     'review_score_ppc',
                                     axis='columns',
                                     index_dtypes=[int])
-  
-  pred_df = pd.concat([citation_pred_df.rename(columns={'review_score_ppc': 'citation_pred'}), 
+
+  pred_df = pd.concat([citation_pred_df.rename(columns={'review_score_ppc': 'citation_pred'}),
                        review_pred_df.rename(columns={'review_score_ppc': 'review_pred'})],
                       axis=1)
 
@@ -70,7 +70,7 @@ for citation_score in citation_scores:
              .unstack(level=0)
              .swaplevel(0, 1, axis='columns')
              )
-  
+
   # Now make sure it is properly sorted
   pred_df = pred_df.sort_index(axis='index')
   pred_df = pred_df.sort_index(axis='columns')
@@ -86,65 +86,74 @@ for citation_score in citation_scores:
                      )
   #%% Plot results for review, observed vs. posterior
 
-  plt_df = pd.merge(metric_df, summary_pred_df.loc[:,'citation_pred'], 
+  plt_df = pd.merge(metric_df, summary_pred_df.loc[:,'citation_pred'],
                     left_index=True, right_index=True)
-  
-  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
+
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean',
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
 
   (g.set_axis_labels("Observed review score", "Predicted review score")
     .set_titles("{col_name}")
     .tight_layout(w_pad=0))
+
+  g.map(plt.axline, xy1=(25, 25), slope=1, color='black')
 
   plt.savefig(output_dir / 'citation_pred.pdf', bbox_inches='tight')
   plt.close()
-  
+
   #%% Plot results for review, observed vs. posterior
-  plt_df = pd.merge(metric_df, summary_pred_df.loc[:,'review_pred'], 
+  plt_df = pd.merge(metric_df, summary_pred_df.loc[:,'review_pred'],
                     left_index=True, right_index=True)
-  
-  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
+
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean',
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
 
   (g.set_axis_labels("Observed review score", "Predicted review score")
     .set_titles("{col_name}")
     .tight_layout(w_pad=0))
 
+  g.map(plt.axline, xy1=(25, 25), slope=1, color='black')
+
   plt.savefig(output_dir / 'review_pred.pdf', bbox_inches='tight')
-  plt.close()  
-  
+  plt.close()
+
   #%% Plot two predicted posteriors versus each other
-  plt_df = pd.merge(metric_df, summary_pred_df, 
-                    left_index=True, right_index=True)  
-  g = sns.relplot(plt_df, 
-                  x=('review_pred', 'mean'), 
-                  y=('citation_pred', 'mean'), 
+  plt_df = pd.merge(metric_df, summary_pred_df,
+                    left_index=True, right_index=True)
+  g = sns.relplot(plt_df,
+                  x=('review_pred', 'mean'),
+                  y=('citation_pred', 'mean'),
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
-  
+
   (g.set_axis_labels("Review-based predicted review score", "Citation-based predicted review score")
     .set_titles("{col_name}")
-    .tight_layout(w_pad=0))  
-  
+    .tight_layout(w_pad=0))
+
+  g.map(plt.axline, xy1=(25, 25), slope=1, color='black')
+
   plt.savefig(output_dir / 'review_pred_vs_citation_pred.pdf', bbox_inches='tight')
-  
+
   #%% Aggregate to institutional level
-  
+
   inst_metric_df = metric_df.groupby(['INSTITUTION_ID', 'GEV']).mean()
- 
+
   # Create institutional predictions
   inst_gev_df = metric_df[['INSTITUTION_ID', 'GEV']]
-  metric_pred_df = pd.merge(inst_gev_df, pred_df, 
+  metric_pred_df = pd.merge(inst_gev_df, pred_df,
                            left_index=True, right_index=True)
-  
+
   inst_pred_df = metric_pred_df.groupby(['INSTITUTION_ID', 'GEV']).mean()
 
   inst_pred_df.columns = pd.MultiIndex.from_tuples(c for c in inst_pred_df.columns)
-  
+
   #%% Summarize at institutional level
-  
+
   summary_inst_pred_df = (inst_pred_df
                          .T
                          .groupby(level=0)
@@ -152,15 +161,18 @@ for citation_score in citation_scores:
                          .T
                          .unstack(level=-1)
                          )
-      
+
   #%% Plot results for review, observed vs. posterior
 
-  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'citation_pred'], 
+  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'citation_pred'],
                     left_index=True, right_index=True)
-  
-  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
+
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean',
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
+
+  g.map(plt.axline, xy1=(0, 0), slope=1, color='black')
 
   (g.set_axis_labels("Observed review score", "Predicted review score")
     .set_titles("{col_name}")
@@ -168,36 +180,41 @@ for citation_score in citation_scores:
 
   plt.savefig(output_dir / 'inst_citation_pred.pdf', bbox_inches='tight')
   #plt.close()
-  
+
   #%% Plot results for review, observed vs. posterior
-  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'review_pred'], 
+  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'review_pred'],
                     left_index=True, right_index=True)
-  
-  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean', 
+
+  g = sns.relplot(plt_df, x='REV_2_SCORE', y='mean',
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
 
   (g.set_axis_labels("Observed review score", "Predicted review score")
     .set_titles("{col_name}")
     .tight_layout(w_pad=0))
 
+  g.map(plt.axline, xy1=(25, 25), slope=1, color='black')    
+
   plt.savefig(output_dir / 'inst_review_pred.pdf', bbox_inches='tight')
-  #plt.close()  
-  
+  #plt.close()
+
   #%% Plot two predicted posteriors versus each other
-  
-  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df, 
+
+  plt_df = pd.merge(inst_metric_df, summary_inst_pred_df,
                     left_index=True, right_index=True)
-  
-  g = sns.relplot(plt_df, 
-                  x=('review_pred', 'mean'), 
-                  y=('citation_pred', 'mean'), 
+
+  g = sns.relplot(plt_df,
+                  x=('review_pred', 'mean'),
+                  y=('citation_pred', 'mean'),
                   col='GEV', col_order=gev_names_df['GEV'], col_wrap=4,
+                  height=3,
                   alpha=0.4)
-  
+
   (g.set_axis_labels("Review-based predicted review score", "Citation-based predicted review score")
     .set_titles("{col_name}")
-    .tight_layout(w_pad=0))  
-  
+    .tight_layout(w_pad=0))
+
+  g.map(plt.axline, xy1=(25, 25), slope=1, color='black')    
+
   plt.savefig(output_dir / 'inst_review_pred_vs_citation_pred.pdf', bbox_inches='tight')
-  
