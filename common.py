@@ -16,7 +16,7 @@ gev_names_df = pd.DataFrame(
 
 import matplotlib.pyplot as plt
 
-def errorbar(x, y, ylow, yhigh=None, xlow=None, xhigh=None, **kwargs):
+def errorbar(ax, x, y, ylow, yhigh=None, xlow=None, xhigh=None, **kwargs):
     yerr = None
     if yhigh is None:
         yerr = ylow
@@ -29,7 +29,7 @@ def errorbar(x, y, ylow, yhigh=None, xlow=None, xhigh=None, **kwargs):
     elif xlow is not None and xhigh is not None:
         xerr= [x - xlow, xhigh - x]
         
-    return plt.errorbar(x, y, yerr=yerr, xerr=xerr, **kwargs)
+    return ax.errorbar(x, y, yerr=yerr, xerr=xerr, **kwargs)
 
 def extract_variable(df, variable, axis, index_dtypes=None):
   """ Extracts a variable from a summary dataframe from stan, and vectorizes
