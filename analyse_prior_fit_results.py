@@ -4,7 +4,9 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
+from matplotlib.transforms import blended_transform_factory
 from common import extract_variable, percentile
+import numpy as np
 
 #%% Set the directory we want to transform the fit results for
 results_dir = Path('../results/20230213201810')
@@ -40,7 +42,7 @@ for citation_score, citation_score_title in citation_scores.items():
   # Create output dir
   output_dir = results_dir / 'figures' / citation_score / prediction_type
   output_dir.mkdir(parents=True, exist_ok=True)
-
+  
   #%% Plot results for beta distribution
   
   beta_df = extract_variable(draws_df, 'beta', axis='columns')
@@ -54,7 +56,7 @@ for citation_score, citation_score_title in citation_scores.items():
                        axis=1)
   beta_df.columns.names = ['citation_score', 'variable', 'GEV']
   beta_dfs.append(beta_df)
-  
+
   sns.set_style('whitegrid')
   sns.set_palette('Set1')
 
@@ -100,7 +102,7 @@ for citation_score, citation_score_title in citation_scores.items():
                            'sigma_cit': 'Citation',
                            'sigma_review': 'Review'})
   sigma_dfs.append(sigma_df)
-  
+
   g = sns.catplot(sigma_df.melt(), x='value', y='GEV', hue='variable',
               kind='violin', scale='width',
               linewidth=1, alpha=0.8, inner=None,
@@ -123,6 +125,80 @@ for citation_score, citation_score_title in citation_scores.items():
   
   plt.savefig(output_dir / 'sigma.pdf', bbox_inches='tight')
   plt.close()
+
+  #%% Example posterior distribution for reviews
+  suitable_examples = metric_df.dropna().query('REV_1_SCORE != REV_2_SCORE')
+  median_paper_id = suitable_examples[citation_score].sort_values().index[suitable_examples.shape[0]//2]  
+  posterior_df = draws_df[f'review_score_ppc[{median_paper_id}]']
+  observation = metric_df.loc[median_paper_id]
+
+  min_rev = observation[['REV_1_SCORE', 'REV_2_SCORE']].astype(float).argmin() + 1
+
+  fix, ax = plt.subplots(figsize=(4, 3))
+  g = sns.histplot(posterior_df, binwidth=1, 
+                   stat='probability',
+                   element='step', 
+                   label='Posterior',
+                   alpha=0.3)
+  
+  trans = blended_transform_factory(x_transform=g.transData, y_transform=g.transAxes)
+
+  g.axvline(observation['REV_1_SCORE'], color='black')
+  g.annotate('Reviewer 1', 
+             xy=(observation['REV_1_SCORE'], 0.9), 
+             xycoords=trans,
+             xytext=(-5 if min_rev == 1 else 5, 0), 
+             textcoords="offset points",             
+             ha='right' if min_rev == 1 else 'left')
+  
+  g.axvline(observation['REV_2_SCORE'], color='black')
+  g.annotate('Reviewer 2', 
+             xy=(observation['REV_2_SCORE'], 0.9), 
+             xycoords=trans,             
+             xytext=(-5 if min_rev == 2 else 5, 0), 
+             textcoords="offset points",
+             ha='right' if min_rev == 2 else 'left')
+
+  g.set_xlabel('Review score')
+
+  sns.despine()
+
+  plt.savefig(output_dir / 'review_posterior_example.pdf', bbox_inches='tight')
+  plt.close()
+
+  #%% Example posterior distribution for citations
+  posterior_df = draws_df[f'citation_ppc[{median_paper_id}]']
+  observation = metric_df.loc[median_paper_id, citation_score]
+
+  if 'PERCENTILE' in citation_score:
+    clip = [0, 1]
+    observation /= 100
+  else:
+    clip = [0, 5]
+
+  fix, ax = plt.subplots(figsize=(4, 3))
+  g = sns.kdeplot(posterior_df, fill=True, clip=clip, alpha=0.3)
+  
+  if 'PERCENTILE' in citation_score:  
+    g.xaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
+  
+  g.axvline(observation, color='black')
+
+  trans = blended_transform_factory(x_transform=g.transData, y_transform=g.transAxes)
+  g.annotate('Observed citation score', 
+             xy=(observation, 0.9), 
+             xycoords=trans,
+             xytext=(5, 0), 
+             textcoords="offset points",
+             ha='left')
+
+  g.set_xlabel('Citation score')
+  g.set_xlim(clip)
+
+  sns.despine()
+
+  plt.savefig(output_dir / 'citation_posterior_example.pdf', bbox_inches='tight')
+  plt.close()  
 
   #%% Create summary dataframe
   
@@ -177,7 +253,7 @@ for citation_score, citation_score_title in citation_scores.items():
     g.xaxis.set_major_formatter(mtick.PercentFormatter(xmax=100))
     g.yaxis.set_major_formatter(mtick.PercentFormatter(xmax=1))
     g.axline(xy1=(40, 0.4), xy2=(60, 0.6), color='black')
-  
+
   sns.despine()
   
   plt.xlabel('Observed citation score')
@@ -227,6 +303,7 @@ for citation_score, citation_score_title in citation_scores.items():
   plt.ylabel('Paper value')
   plt.savefig(output_dir / 'review_score_paper_value.pdf', bbox_inches='tight')
   plt.close()
+
 #%%
 
 output_dir = results_dir / 'figures'
