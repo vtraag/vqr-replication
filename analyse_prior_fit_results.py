@@ -31,6 +31,9 @@ citation_scores = {
   'PERCENTILE_INDICATOR_VALUE': 'Perc. Journal',
   'PERCENTILE_CITATIONS': 'Perc. Cit'}
 
+beta_dfs = []
+sigma_dfs = []
+
 for citation_score, citation_score_title in citation_scores.items():
   draws_df = pd.read_csv(results_dir / citation_score / prediction_type / 'draws.csv')
   
@@ -45,7 +48,12 @@ for citation_score, citation_score_title in citation_scores.items():
   beta_nonzero_cit_df = extract_variable(draws_df, 'beta_nonzero_cit', axis='columns')
   
   beta_df = pd.concat([beta_df, alpha_nonzero_cit_df, beta_nonzero_cit_df], axis=1)
-  beta_df.columns.names = ['variable', 'GEV']
+  beta_df = pd.concat([beta_df], 
+                       keys=[citation_score_title], 
+                       names=['citation_score'], 
+                       axis=1)
+  beta_df.columns.names = ['citation_score', 'variable', 'GEV']
+  beta_dfs.append(beta_df)
   
   sns.set_style('whitegrid')
   sns.set_palette('Set1')
@@ -82,12 +90,16 @@ for citation_score, citation_score_title in citation_scores.items():
   sigma_df = pd.concat([sigma_paper_value_df,
                         sigma_cit_df,
                         sigma_review_df],axis=1)
-  
-  sigma_df.columns.names = ['variable', 'GEV']
+  sigma_df = pd.concat([sigma_df], 
+                       keys=[citation_score_title], 
+                       names=['citation_score'], 
+                       axis=1)  
+  sigma_df.columns.names = ['citation_score', 'variable', 'GEV']
   
   sigma_df = sigma_df.rename(columns={'sigma_paper_value': 'Paper value',
                            'sigma_cit': 'Citation',
                            'sigma_review': 'Review'})
+  sigma_dfs.append(sigma_df)
   
   g = sns.catplot(sigma_df.melt(), x='value', y='GEV', hue='variable',
               kind='violin', scale='width',
@@ -215,3 +227,75 @@ for citation_score, citation_score_title in citation_scores.items():
   plt.ylabel('Paper value')
   plt.savefig(output_dir / 'review_score_paper_value.pdf', bbox_inches='tight')
   plt.close()
+#%%
+
+output_dir = results_dir / 'figures'
+
+#%%
+
+all_beta_df = pd.concat(beta_dfs)
+
+sns.set_style('whitegrid')
+sns.set_palette('Set1')
+
+g = (
+    sns.catplot(all_beta_df.melt(), x='value', y='GEV', hue='variable',
+            col='citation_score', col_wrap=2,
+            kind='violin', scale='width',
+            linewidth=1, alpha=0.8, inner=None,
+            height=5, aspect=0.7,
+            palette='Set1')
+    .set_titles("{col_name}")
+    )
+
+for ax in g.axes:
+  yticks = ax.get_yticks()
+  inbetween_y = (yticks[1:] + yticks[:-1])/2
+  for y in inbetween_y:
+    ax.axhline(y, color='gray', linestyle='dotted')
+
+# replace labels
+new_labels = [r'$\beta$', 
+              r'$\alpha_{\bar{0}}$',
+              r'$\beta_{\bar{0}}$']
+for t, l in zip(g._legend.texts, new_labels):
+    t.set_text(l)
+
+sns.move_legend(g, "upper right")
+
+plt.savefig(output_dir / 'beta.pdf', bbox_inches='tight')
+plt.close()  
+
+#%%
+
+all_sigma_df = pd.concat(sigma_dfs)
+
+sns.set_style('whitegrid')
+sns.set_palette('Set1')
+
+g = (
+    sns.catplot(all_sigma_df.melt(), x='value', y='GEV', hue='variable',
+            col='citation_score', col_wrap=2,
+            kind='violin', scale='width',
+            linewidth=1, alpha=0.8, inner=None,
+            height=5, aspect=0.7,
+            palette='Set1')
+    .set_axis_labels('$\sigma$', 'GEV')
+    .set_titles("{col_name}")
+    )
+  
+for ax in g.axes:
+  yticks = ax.get_yticks()
+  inbetween_y = (yticks[1:] + yticks[:-1])/2
+  for y in inbetween_y:
+    ax.axhline(y, color='gray', linestyle='dotted')
+
+  # Make sure the x-limit are not larger than 2, to limit when
+  # plotting results for the PERCENTILE indicators.
+  xlim = ax.get_xlim()
+  ax.set_xlim(xlim[0], min(xlim[1], 2))
+
+sns.move_legend(g, "upper right")
+
+plt.savefig(output_dir / 'sigma.pdf', bbox_inches='tight')
+plt.close()
