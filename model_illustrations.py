@@ -149,15 +149,17 @@ for i, probs in enumerate(convolved_review_probs):
     review_dist = stats.rv_discrete(name='review', values=(scores, probs))
     convolved_review_dists.append(review_dist)
 
+fig, ax = plt.subplots(figsize=(4, 3))
 scores = np.arange(3, 31)
 for i in [0, 2, 4]:
     cdf_scores = convolved_review_dists[i].cdf(scores)
     pmf_scores = np.diff(np.insert(cdf_scores, 0, 0))
-    plt.bar(scores, pmf_scores, width=1, alpha=0.5, zorder=4-i, 
+    ax.bar(scores, pmf_scores, width=1, alpha=0.5, zorder=4-i, 
             label=f'{i+1} reviewer{"s" if i > 0 else ""}')
 
 plt.legend(loc='best')
 
+sns.despine()
 plt.xlabel('Reviewer score')
 plt.ylabel('Probability')
 
@@ -172,8 +174,11 @@ for dist in convolved_review_dists:
     mean_MAD = dist.expect(lambda x: np.abs(x - mean_review_score))
     convolved_MAD.append(mean_MAD)
 
-plt.plot(np.arange(len(convolved_review_dists)) + 1, convolved_MAD, 
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.plot(np.arange(len(convolved_review_dists)) + 1, convolved_MAD, 
          marker='o')
+
+sns.despine()         
 plt.xlabel('Number of reviewers')
 plt.ylabel('Expected MAD')
 
