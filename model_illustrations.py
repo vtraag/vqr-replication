@@ -19,7 +19,8 @@ sigma = 1.3
 
 dist = lognormal(-sigma**2/2, sigma)
 
-K = 28
+possible_review_scores = np.arange(3, 31)
+K = possible_review_scores.shape[0]
 cutoffs = [dist.ppf((i+1)/K) for i in range(K - 1)]
 
 x = np.linspace(0, 3.5, 1000)
@@ -58,7 +59,7 @@ continuous_review_dist = lognormal(np.log(paper_value) - sigma_review**2/2, sigm
 
 review_prob = [0] + [continuous_review_dist.cdf(c) for c in cutoffs] + [1]
 review_prob = np.diff(review_prob)
-review_dist = stats.rv_discrete(name='review', values=(np.arange(3, 31), review_prob))
+review_dist = stats.rv_discrete(name='review', values=(possible_review_scores, review_prob))
 
 citation_dist = lognormal(np.log(paper_value) - sigma_citation**2/2, sigma_citation)
 
@@ -144,17 +145,16 @@ for i in range(10):
 convolved_scores = []
 convolved_review_dists = []
 for i, probs in enumerate(convolved_review_probs):
-    scores = np.arange(probs.shape[0])/(i+1) + 3
+    scores = np.arange(probs.shape[0])/(i+1) + possible_review_scores[0]
     convolved_scores.append(scores)
     review_dist = stats.rv_discrete(name='review', values=(scores, probs))
     convolved_review_dists.append(review_dist)
 
 fig, ax = plt.subplots(figsize=(4, 3))
-scores = np.arange(3, 31)
 for i in [0, 2, 4]:
-    cdf_scores = convolved_review_dists[i].cdf(scores)
+    cdf_scores = convolved_review_dists[i].cdf(possible_review_scores)
     pmf_scores = np.diff(np.insert(cdf_scores, 0, 0))
-    ax.bar(scores, pmf_scores, width=1, alpha=0.5, zorder=4-i, 
+    ax.bar(possible_review_scores, pmf_scores, width=1, alpha=0.5, zorder=4-i, 
             label=f'{i+1} reviewer{"s" if i > 0 else ""}')
 
 plt.legend(loc='best')
@@ -183,4 +183,22 @@ plt.xlabel('Number of reviewers')
 plt.ylabel('Expected MAD')
 
 plt.savefig(figure_dir / 'MAD_multiple_reviewers.pdf', bbox_inches='tight')
-# %%
+
+#%% Calculate percentage agreement for multiple reviewers
+
+convolved_agreement = []
+for dist in convolved_review_dists:
+    cdf_scores = dist.cdf(possible_review_scores)
+    pmf_scores = np.diff(np.insert(cdf_scores, 0, 0))  
+    agreement = (pmf_scores*pmf_scores).sum()
+    convolved_agreement.append(agreement)
+
+fig, ax = plt.subplots(figsize=(4, 3))
+ax.plot(np.arange(len(convolved_review_dists)) + 1, convolved_agreement, 
+         marker='o')
+
+sns.despine()         
+plt.xlabel('Number of reviewers')
+plt.ylabel('Expected agreement')
+
+plt.savefig(figure_dir / 'Agreement_multiple_reviewers.pdf', bbox_inches='tight')
