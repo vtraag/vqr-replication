@@ -156,7 +156,7 @@ for citation_score in citation_scores:
       else:
         # If we do prediction, we are only interested in the predicted
         # review scores
-        draws_df = fit.draws_pd('review_score_ppc')
+        draws_df = fit.draws_pd(['review_score_ppc', 'value_inst'])
         
       # Add the draws, with renamed columns
       all_draws_df.append(
