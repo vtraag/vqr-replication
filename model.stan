@@ -19,39 +19,6 @@ data {
     // Toggle to determine whether citation_scores represent percentile scores
     // or whether they represent (normalised) citation scores.
     int citation_percentile_score;
-
-    // Toggle to determine whether we want to estimate coefficients
-    // using the overall priors, or whether we want to use priors that
-    // are based on estimates themselves.
-    // 
-    // If we use already estimated coefficients, we can use this
-    // to predict scores through paper values. If we would not use 
-    // estimated coefficients, this would lead to inferior prediction,
-    // and the parameters could not be leanred without acccess to both scores.
-    int use_estimated_priors;
-
-    // The below are estimated coefficients from other models.
-    real<lower=0> sigma_paper_value_mu;
-    real<lower=0> sigma_paper_value_sigma;
-
-    // Coefficient of citation
-    real beta_mu;
-    real<lower=0> beta_sigma;
-
-    // Standard deviation of citation
-    real<lower=0> sigma_cit_mu;
-    real<lower=0> sigma_cit_sigma;
-
-    // Standard deviation of peer review.
-    real<lower=0> sigma_review_mu;
-    real<lower=0> sigma_review_sigma;
-
-    real alpha_nonzero_cit_mu;
-    real<lower=0> alpha_nonzero_cit_sigma;
-
-    real beta_nonzero_cit_mu;
-    real<lower=0> beta_nonzero_cit_sigma;
-
 }
 transformed data {
 
@@ -119,29 +86,14 @@ parameters {
 }
 model {
 
-    if (use_estimated_priors)
-    {
-        sigma_paper_value ~ normal(sigma_paper_value_mu, sigma_paper_value_sigma);
-        sigma_review ~ normal(sigma_review_mu, sigma_review_sigma);
-        sigma_cit ~ normal(sigma_cit_mu, sigma_cit_sigma);
+    sigma_paper_value ~ std_normal();        
+    sigma_review ~ std_normal();
+    sigma_cit ~ std_normal();
 
-        beta ~ normal(beta_mu, beta_sigma);
+    beta ~ std_normal();
 
-        alpha_nonzero_cit ~ normal(alpha_nonzero_cit_mu, alpha_nonzero_cit_sigma);
-
-        beta_nonzero_cit ~ normal(beta_nonzero_cit_mu, beta_nonzero_cit_sigma);
-    }
-    else
-    {
-        sigma_paper_value ~ std_normal();        
-        sigma_review ~ std_normal();
-        sigma_cit ~ std_normal();
-
-        beta ~ std_normal();
-
-        alpha_nonzero_cit ~ std_normal();
-        beta_nonzero_cit ~ std_normal();
-    }
+    alpha_nonzero_cit ~ std_normal();
+    beta_nonzero_cit ~ std_normal();
 
     // The review and citation value for each institution is sampled from a
     // normal distribution centered at 0, with a certain correlation between

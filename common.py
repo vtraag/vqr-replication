@@ -121,3 +121,23 @@ def unique_id(df, start_id=1):
 
 def nuniq(df):
     return df.drop_duplicates().shape[0]
+
+#%% Define functions for creating a group k-fold partition
+
+from sklearn.model_selection import GroupKFold
+def group_kfold_partition(groups, n_splits):
+  """Partition into folds based on the groups. 
+  
+  This function is a simple helper function to translate results 
+  from sklearn to a vector that contains in which fold an element 
+  is in the test set.
+
+  Returns a vector indicating for each element in which fold it is in the test set.
+  """
+  gkf = GroupKFold(n_splits=n_splits)
+  n = len(groups)
+  folds = np.repeat(-1, n)
+  for i, (train, test) in enumerate(gkf.split(range(n), range(n), groups=groups)):
+      folds[test] = i
+
+  return folds
