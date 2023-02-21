@@ -9,7 +9,7 @@ from common import extract_variable, percentile
 import numpy as np
 
 #%% Set the directory we want to transform the fit results for
-results_dir = Path('../results/20230213201810')
+results_dir = Path('../results/20230220131637')
 
 #%% Load the original data
 
@@ -25,7 +25,7 @@ metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
 
 #%%
 
-prediction_type = 'prior'
+prediction_type = 'review'
 
 citation_scores = {
   'ncs': 'NCS',
@@ -37,10 +37,10 @@ beta_dfs = []
 sigma_dfs = []
 
 for citation_score, citation_score_title in citation_scores.items():
-  draws_df = pd.read_csv(results_dir / citation_score / prediction_type / 'draws.csv')
+  draws_df = pd.read_csv(results_dir / citation_score / prediction_type / 'train_draws.csv')
   
   # Create output dir
-  output_dir = results_dir / 'figures' / citation_score / prediction_type
+  output_dir = results_dir / 'figures' / citation_score / 'train'
   output_dir.mkdir(parents=True, exist_ok=True)
   
   #%% Plot results for beta distribution

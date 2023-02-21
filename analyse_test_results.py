@@ -7,7 +7,7 @@ from common import gev_names_df, extract_variable, percentile
 
 #%% Set the directory we want to transform the fit results for
 
-results_dir = Path('../results/20230213201810')
+results_dir = Path('../results/20230220131637')
 
 #%% Load the original data
 
@@ -39,21 +39,21 @@ citation_scores = ['ncs',
 
 for citation_score in citation_scores:
 
-  # Load the original draws for the predictions, both from citations and reviews
-  citation_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'citation_prediction' / 'draws.csv')
-  review_prediction_draws_df = pd.read_csv(results_dir / citation_score / 'review_prediction' / 'draws.csv')
+  # Load the original draws for the test, both from citations and reviews
+  citation_test_draws_df = pd.read_csv(results_dir / citation_score / 'citation' / 'test_draws.csv')
+  review_test_draws_df = pd.read_csv(results_dir / citation_score / 'review' / 'test_draws.csv')
 
-  output_dir = results_dir / 'figures' / citation_score / 'prediction'
+  output_dir = results_dir / 'figures' / citation_score / 'test'
 
   output_dir.mkdir(parents=True, exist_ok=True)
   
   #%% Combine both predictions
 
-  citation_pred_df = extract_variable(citation_prediction_draws_df,
+  citation_pred_df = extract_variable(citation_test_draws_df,
                                       'review_score_ppc',
                                       axis='columns',
                                       index_dtypes=[int])
-  review_pred_df = extract_variable(review_prediction_draws_df,
+  review_pred_df = extract_variable(review_test_draws_df,
                                     'review_score_ppc',
                                     axis='columns',
                                     index_dtypes=[int])

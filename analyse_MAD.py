@@ -8,7 +8,7 @@ from common import gev_names_df, extract_variable
 
 #%% Set the directory we want to transform the fit results for
 
-results_dir = Path('../results/20230213201810')
+results_dir = Path('../results/20230220131637')
 
 #%% Load the original data
 
@@ -50,7 +50,7 @@ inst_MAPD_dfs = []
 
 for citation_score in citation_scores:
 
-  draws_df = pd.read_csv(results_dir / citation_score / 'citation_prediction' / 'draws.csv')     
+  draws_df = pd.read_csv(results_dir / citation_score / 'citation' / 'test_draws.csv')
   
   #%%
   # Change format
@@ -100,7 +100,7 @@ for citation_score in citation_scores:
 
 #%% Also add review MAD
 
-draws_df = pd.read_csv(results_dir / 'ncs' / 'review_prediction' / 'draws.csv')     
+draws_df = pd.read_csv(results_dir / 'ncs' / 'review' / 'test_draws.csv')     
 
 # Change format
 pred_df = extract_variable(draws_df, 'review_score_ppc', axis='columns', index_dtypes=[int])
