@@ -92,6 +92,45 @@ def extract_variable(df, variable, axis, index_dtypes=None):
     
   return variable_df
 
+def extract_indices(lst):
+  """ Extracts indices from a list of variable names from stan. That is, if there 
+  is a variable x[1], x[2], etc.. in a stan dataframe, it is extracted by this function 
+  to a list of
+  [('x', '1'),
+   ('x', '2'),
+   ...]
+  """
+
+  var_re = re.compile(f'(\w*)(\[[^\]]*\])?')
+
+  split_list = []
+
+  # Check each element
+  for el in lst:
+
+    # See if it matches the regex
+    m = var_re.match(el)   
+
+    # If it does
+    if m:
+
+      # We split it into variables and indices
+      variable, indices = m.groups()
+
+      # If we did find any indices
+      if indices:
+        # We will split all indices into separate elements
+        indices = indices[1:-1].split(',')
+        split_list.append([variable] + indices)
+      else:
+        # Else we just add the variable
+        split_list.append([variable])
+    else:
+      # We only add the variable itself
+      split_list.append([el])
+
+  return split_list
+
 def percentile(n):
   """"Named percentile function to be used for aggregation of pandas DataFrames"""
   def percentile_(x):
