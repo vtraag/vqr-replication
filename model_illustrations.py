@@ -32,7 +32,7 @@ plt.plot(x, dist.pdf(x))
 
 for i, c in enumerate(cutoffs):
     plt.axvline(c, color='lightgray', linewidth=0.1)
-    if i > 22:
+    if i > 22 and i < 26:
         plt.text(x=c+0.1, y=1, s=f'{i+3}', color='lightgray')
 
 plt.xlim(0, 3.5)
@@ -86,6 +86,12 @@ ax.set_ylim(0, ax.get_ylim()[1])
 
 ax.axvline(paper_value, color='black')
 
+ax.annotate('a)',
+            fontsize='large', fontweight='bold',
+            xy=(0,1), xycoords='axes fraction',
+            xytext=(-15,15), textcoords='offset points',
+            ha='right', va='bottom')
+
 # Plot individual paper distributions
 ytop = 0.8
 
@@ -112,10 +118,16 @@ con = ConnectionPatch(xyA=(paper_value, 0), coordsA=axs[0].transData,
                       color='black', zorder=0)
 fig.add_artist(con)
 
+ax.annotate('b)',
+            fontsize='large', fontweight='bold',
+            xy=(0,1), xycoords='axes fraction',
+            xytext=(-15,15), textcoords='offset points',
+            ha='right', va='bottom')
+
 secax = ax.secondary_xaxis('top')
 labels = [f'{i + 3}' if i > 19 else '' for i in range(len(review_prob))]
 secax.set_xticks(([0] + cutoffs) + 0.5*width, labels)
-secax.set_xlabel('Review score', 
+secax.set_xlabel('Review score',
                  bbox=dict(boxstyle='square,pad=0', fc='white', ec='none'))
 
 ax.set_xlim(0, 3)
