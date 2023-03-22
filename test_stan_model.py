@@ -9,12 +9,11 @@ from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from common import unique_id, nuniq, extract_variable, group_kfold_partition
+from common import unique_id, nuniq, extract_variable, group_kfold_partition, data_dir
 
 #%%
 
-now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
-output_dir = Path(f'../results/{now}')
+output_dir = Path(f'test/')
 
 #%%
 
@@ -24,8 +23,8 @@ print(model)
 
 #%%
 
-inst_df = pd.read_csv('../data/public/institutional.csv')
-metric_df = pd.read_csv('../data/public/metrics.csv')
+inst_df = pd.read_csv(data_dir / 'institutional.csv')
+metric_df = pd.read_csv(data_dir / 'metrics.csv')
 
 #%%
 

@@ -3,16 +3,12 @@ import pandas as pd
 from pathlib import Path
 import seaborn as sns
 import matplotlib.pyplot as plt
-from common import gev_names_df, extract_variable, percentile
-
-#%% Set the directory we want to transform the fit results for
-
-results_dir = Path('../results/20230220131637')
+from common import gev_names_df, extract_variable, percentile, results_dir, data_dir
 
 #%% Load the original data
 
-inst_df = pd.read_csv('../data/public/institutional.csv')
-metric_df = pd.read_csv('../data/public/metrics.csv')
+inst_df = pd.read_csv(data_dir / 'institutional.csv')
+metric_df = pd.read_csv(data_dir / 'metrics.csv')
 
 # We call the original index the paper_id
 metric_df = (metric_df

@@ -5,16 +5,13 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.transforms import blended_transform_factory
-from common import extract_variable, percentile
+from common import extract_variable, percentile, results_dir, data_dir
 import numpy as np
-
-#%% Set the directory we want to transform the fit results for
-results_dir = Path('../results/20230220131637')
 
 #%% Load the original data
 
-inst_df = pd.read_csv('../data/public/institutional.csv')
-metric_df = pd.read_csv('../data/public/metrics.csv')
+inst_df = pd.read_csv(data_dir / 'institutional.csv')
+metric_df = pd.read_csv(data_dir / 'metrics.csv')
 
 # Ensure the dataframe is correctly sorted
 metric_df.index.name = 'paper_id'

@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 
@@ -13,6 +14,15 @@ gev_names_df = pd.DataFrame(
   ['9',   "Industrial & Information Engineering"],
   ['11b', "Psychology"],
   ['13',  "Economics & Statistics"]], columns=['GEV_id', 'GEV'])
+
+# Set directories
+data_dir = Path('data')
+results_dir = Path('results')
+figure_dir = Path('figures')
+
+# Create directories if they do not yet exist
+for dir in [data_dir, results_dir, figure_dir]:
+  dir.mkdir(parents=True, exist_ok=True)
 
 import matplotlib.pyplot as plt
 

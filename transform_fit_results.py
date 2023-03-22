@@ -2,16 +2,12 @@
 import cmdstanpy
 import pandas as pd
 from pathlib import Path
-from common import gev_names_df
-
-#%% Set the directory we want to transform the fit results for
-
-results_dir = Path('../results/20230220131637')
+from common import gev_names_df, results_dir, data_dir
 
 #%% Load the original data
 
-inst_df = pd.read_csv('../data/public/institutional.csv')
-metric_df = pd.read_csv('../data/public/metrics.csv')
+inst_df = pd.read_csv(data_dir / 'institutional.csv')
+metric_df = pd.read_csv(data_dir / 'metrics.csv')
 
 #%% Define functions
 

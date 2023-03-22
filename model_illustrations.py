@@ -6,12 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import ConnectionPatch
 import numpy as np
-from common import lognormal
-
-#%% Create figure output directory
-
-figure_dir = Path('.') / '..' / 'figures'
-figure_dir.mkdir(parents=True, exist_ok=True)
+from common import lognormal, figure_dir
 
 #%% Draw lognormal distribution for prediction of reviewer scores
 

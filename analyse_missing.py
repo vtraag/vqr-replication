@@ -3,17 +3,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from common import gev_names_df
+from common import gev_names_df, figure_dir, data_dir
 import os
 
-#%% Set path
-
-figure_dir = '../figures/'
-if not os.path.exists(figure_dir):
-  os.makedirs(figure_dir)
-
 #%% Read data
-institution_df = pd.read_csv('../data/public/institutional.csv', index_col='INSTITUTION_ID')
+institution_df = pd.read_csv(data_dir / 'institutional.csv', index_col='INSTITUTION_ID')
 
 #%% Aggregate at GEV level
 GEV_df = institution_df.groupby('GEV_id').sum()
@@ -51,4 +45,4 @@ plt.legend(bbox_to_anchor=(0.5, 1.02), loc='lower center',
            frameon=False,
            ncol=3)
 sns.despine()
-plt.savefig(os.path.join(figure_dir, 'GEV_missing_pubs.pdf'), bbox_inches='tight')
+plt.savefig(figure_dir / 'GEV_missing_pubs.pdf', bbox_inches='tight')

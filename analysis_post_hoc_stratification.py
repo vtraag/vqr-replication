@@ -5,15 +5,10 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import seaborn as sns
 import os
-
-colors = sns.palettes.mpl_palette('Set1', 8)
-
-figure_dir = '../figures/'
-if not os.path.exists(figure_dir):
-  os.makedirs(figure_dir)
+from common import data_dir, figure_dir
 
 #%% Read institutional data
-stratification_df = pd.read_csv('../data/public/institutional.csv', index_col='INSTITUTION_ID')
+stratification_df = pd.read_csv(data_dir / 'institutional.csv', index_col='INSTITUTION_ID')
 
 inst_df = stratification_df.groupby('INSTITUTION_ID').sum()
 inst_df['prop_pubs_in_study'] = inst_df['in_sample'].fillna(0)/inst_df['VQR_submissions']
@@ -65,4 +60,4 @@ plt.legend(loc='lower center', bbox_to_anchor=(0.5, 1),
            frameon=False)
 plt.xlim(0, 0.15)
 sns.despine()
-plt.savefig(os.path.join(figure_dir, 'stratification.pdf'), bbox_inches='tight')
+plt.savefig(figure_dir / 'stratification.pdf', bbox_inches='tight')

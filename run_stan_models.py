@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 from pathlib import Path
-from common import unique_id, nuniq, group_kfold_partition
+from common import unique_id, nuniq, group_kfold_partition, results_dir
 
 #%% Define function for preparing the data
 
@@ -106,8 +106,7 @@ def prepare_data(paper_df, citation_score, fold, prediction_type: Literal['citat
 
 #%% Create output directory
 
-now = dt.datetime.now().strftime("%Y%m%d%H%M%S")
-output_dir = Path(f'../results/{now}')
+output_dir = results_dir
 
 #%% Load model
 
