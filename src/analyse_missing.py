@@ -27,6 +27,7 @@ group_gap = 0.3
 width = 0.8
 bars = []
 
+# Create stacked bar charts
 h = 0
 y = GEV_df['no_reviewers_2'];
 b = plt.bar(x=x, height=y, bottom=h, width=width, label='2 reviewers')
@@ -38,7 +39,6 @@ y = GEV_df['no_reviewers_0']
 b = plt.bar(x=x, height=y, bottom=h, width=width, label='No reviewer')
 
 plt.xticks(np.arange(len(xlabels)), xlabels, rotation='vertical')
-#plt.xlabel('GEV')
 plt.ylabel('Number of publications')
 plt.grid(axis='y', ls=':')
 plt.legend(bbox_to_anchor=(0.5, 1.02), loc='lower center',

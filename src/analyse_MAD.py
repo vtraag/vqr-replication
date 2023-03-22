@@ -33,7 +33,7 @@ g = metric_df.groupby(['INSTITUTION_ID', 'GEV'])
 inst_metric_df = g.mean()
 inst_metric_df['n_pubs'] = g.size()
 
-#%%
+#%% Create figures
 
 citation_scores = ['ncs',
                    'njs',
@@ -50,8 +50,7 @@ for citation_score in citation_scores:
 
   draws_df = pd.read_csv(results_dir / citation_score / 'citation' / 'test_draws.csv')
   
-  #%%
-  # Change format
+  #%% Change format
   pred_df = extract_variable(draws_df, 'review_score_ppc', axis='columns', index_dtypes=[int])
   pred_df = pred_df.rename(columns={'review_score_ppc': f'{citation_score}_review_pred'})
 

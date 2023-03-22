@@ -26,7 +26,7 @@ metric_df = (metric_df
              .sort_index()
             )
 
-#%%
+#%% Plot figures
 
 citation_scores = ['ncs',
                    'njs',
@@ -134,7 +134,8 @@ for citation_score in citation_scores:
   g.map(plt.axline, xy1=(25, 25), slope=1, color='black')
 
   plt.savefig(output_dir / 'review_pred_vs_citation_pred.pdf', bbox_inches='tight')
-
+  plt.close()
+  
   #%% Aggregate to institutional level
 
   inst_metric_df = metric_df.groupby(['INSTITUTION_ID', 'GEV']).mean()
@@ -175,7 +176,7 @@ for citation_score in citation_scores:
     .tight_layout(w_pad=0))
 
   plt.savefig(output_dir / 'inst_citation_pred.pdf', bbox_inches='tight')
-  #plt.close()
+  plt.close()
 
   #%% Plot results for review, observed vs. posterior
   plt_df = pd.merge(inst_metric_df, summary_inst_pred_df.loc[:,'review_pred'],
@@ -193,7 +194,7 @@ for citation_score in citation_scores:
   g.map(plt.axline, xy1=(25, 25), slope=1, color='black')    
 
   plt.savefig(output_dir / 'inst_review_pred.pdf', bbox_inches='tight')
-  #plt.close()
+  plt.close()
 
   #%% Plot two predicted posteriors versus each other
 
@@ -214,3 +215,4 @@ for citation_score in citation_scores:
   g.map(plt.axline, xy1=(25, 25), slope=1, color='black')    
 
   plt.savefig(output_dir / 'inst_review_pred_vs_citation_pred.pdf', bbox_inches='tight')
+  plt.close()

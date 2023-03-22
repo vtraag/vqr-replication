@@ -137,7 +137,7 @@ order = [0,2,1]
 plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order])
 
 plt.savefig(figure_dir / 'model_illustration.pdf', bbox_inches='tight')
-# plt.close()
+plt.close()
 
 #%% Illustration of theoretical results using multiple reviewers
 

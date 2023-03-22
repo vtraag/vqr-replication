@@ -40,17 +40,17 @@ transformed data {
     {
         // Assume that the percentile comes from the same distribution
         // as the review score distribution, and use that to transform
-        // the percentil score to a "raw" score (except for the fact that
+        // the percentile score to a "raw" score (except for the fact that
         // we expect it to be normalised).
         for (i in 1:N_citation_scores)
         {
             real percentile = citation_score[i] / 100.0;
-            
+
             // We threshold the percentile to avoid infinite values
             if (percentile <= 0)
             {
                 percentile = 0.001;
-            }            
+            }
             if (percentile >= 1)
             {
                 percentile = 0.999;
@@ -86,7 +86,8 @@ parameters {
 }
 model {
 
-    sigma_paper_value ~ std_normal();        
+    // Priors on all parameters
+    sigma_paper_value ~ std_normal();
     sigma_review ~ std_normal();
     sigma_cit ~ std_normal();
 
@@ -95,33 +96,28 @@ model {
     alpha_nonzero_cit ~ std_normal();
     beta_nonzero_cit ~ std_normal();
 
-    // The review and citation value for each institution is sampled from a
-    // normal distribution centered at 0, with a certain correlation between
-    // the review and the citation value.
     value_inst ~ std_normal();
 
-    // The review and citation value for each paper is sampled from a normal
-    // distribution centered at the review and citations values for the
-    // institutions that the papers is a part of, with a certain correlation
-    // between the review and the citation value.
+    // The value for each paper is sampled from a lognormal distribution
+    // centered at the institutional value.
     value_per_paper ~ lognormal(value_inst[institution_per_paper], sigma_paper_value);
-    
+
     for (i in 1:N_citation_scores)
     {
         real value = value_per_paper[paper_per_citation_score[i]];
 
-        raw_citation_score[i] ~ hurdle_lognormal_logit(log(value) + beta - sigma_cit^2/2, 
+        // The citation score follows a hurdle lognormal model.
+        raw_citation_score[i] ~ hurdle_lognormal_logit(log(value) + beta - sigma_cit^2/2,
                                                    sigma_cit,
                                                    alpha_nonzero_cit + beta_nonzero_cit*value);
     }
 
-    // The actual review scores per paper are sampled from a normal distribution
-    // which is centered at the citation value for each paper, with a certain
-    // uncertainty.
+
     for (i in 1:N_review_scores)
     {
         real value = value_per_paper[paper_per_review_score[i]];
 
+        // The review scores follow a ordinal lognormal model
         review_score[i] ~ ordinal_lognormal(log(value) - sigma_review^2/2,
                                             sigma_review,
                                             review_cutpoints);
@@ -135,8 +131,8 @@ generated quantities {
     {
         real value = value_per_paper[i];
 
-        review_score_ppc[i] = ordinal_lognormal_rng(log(value) - sigma_review^2/2, 
-                                                    sigma_review, 
+        review_score_ppc[i] = ordinal_lognormal_rng(log(value) - sigma_review^2/2,
+                                                    sigma_review,
                                                     review_cutpoints);
 
         citation_ppc[i] = hurdle_lognormal_logit_rng(log(value) + beta - sigma_cit^2/2,

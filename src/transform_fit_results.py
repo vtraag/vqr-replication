@@ -119,7 +119,7 @@ def rename_columns_and_split(draws_df, inst_id_df, paper_df, fold, GEV):
 
   return train_df, test_df
 
-#%%
+#%% Transform results
 
 citation_scores = ['ncs',
                    'njs',
@@ -189,8 +189,7 @@ for citation_score in citation_scores:
 
       test_draws_df.append(test_df)
     
-    #%%
-    # Concatenate all draws from across GEVs
+    #%% Concatenate all draws from across GEVs
     all_test_draws_df = pd.concat(test_draws_df, axis=1)
     all_train_draws_df = pd.concat(train_draws_df, axis=1)
 

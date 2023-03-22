@@ -11,22 +11,22 @@ import matplotlib.pyplot as plt
 
 from common import unique_id, nuniq, extract_variable, group_kfold_partition, data_dir
 
-#%%
+#%% Create test directory
 
 output_dir = Path(f'test/')
 
-#%%
+#%% Compile model
 
 stan_file = os.path.abspath('./model.stan')
 model = CmdStanModel(stan_file=stan_file)
 print(model)
 
-#%%
+#%% Load data
 
 inst_df = pd.read_csv(data_dir / 'institutional.csv')
 metric_df = pd.read_csv(data_dir / 'metrics.csv')
 
-#%%
+#%% Prepare data
 
 citation_score = 'ncs'
 
@@ -65,11 +65,11 @@ review_df = (
                 .sort_values('new_paper_id')    
             )
 
-#%%
+#%% Create a certain fold
 
 paper_df['fold'] = group_kfold_partition(paper_df['new_institution_id'], 5)
 
-#%%
+#%% Prepare data for stan
 
 prediction_type = 'review'
 fold = 0
@@ -129,17 +129,17 @@ data = {
 fit = model.sample(data=data, chains=1, 
                    output_dir = output_dir / f'{prediction_type}' / f'{fold}')
 
-#%%
+#%% Check diagnosis
 
 print(fit.diagnose())
 
-#%%
+#%% Get draws and summary dataframes
 
 draws_df = fit.draws_pd()
-
 summary_df = fit.summary()
 
-#%%
+#%% Plot parameter results
+
 sns.set_palette('Set1')
 
 fig, axs = plt.subplots(1, 3, figsize=(9, 3))
@@ -163,13 +163,12 @@ plt.yticks([])
 plt.ylabel('')
 plt.legend(loc='best')
 
-#%%
-#paper_id = 385 # High ncs
-paper_id = 1 # Low ncs
+#%% Check out an individual paper
+paper_id = 1
 sns.distplot(draws_df[f'citation_ppc[{paper_id}]'])
 plt.axvline(citation_df.query(f'new_paper_id == {paper_id}').iloc[0, 1], color='k')
 
-  #%%
+#%% Define convenience function for plotting some results
 
 def extract_and_merge(variable):
     review_score_ppc_df = extract_variable(summary_df, 
@@ -185,7 +184,7 @@ def extract_and_merge(variable):
 
     return plt_df
 
-#%%
+#%% Plot review score posterior predictive checks
 
 plt_df = extract_and_merge('review_score_ppc')
 
@@ -195,7 +194,7 @@ sns.scatterplot(plt_df, x='REV_2_SCORE', y='Mean', hue='type')
 plt.xlabel('Observed review score')
 plt.ylabel('Posterior predicted review score')
 
-#%%
+#%% Plot posterior value per paper against observed reviewer scores
 
 plt_df = extract_and_merge('value_per_paper')
 
@@ -205,7 +204,7 @@ sns.scatterplot(plt_df, x='REV_2_SCORE', y='Mean', hue='type')
 plt.xlabel('Observed review score')
 plt.ylabel('Inferred paper value')
 
-#%%
+#%% Plot posterior value per paper against citation score
 
 plt_df = extract_and_merge('value_per_paper')
 
@@ -215,7 +214,7 @@ sns.scatterplot(plt_df, x=citation_score, y='Mean', hue='type')
 plt.xlabel('Observed citation score')
 plt.ylabel('Inferred paper value')
 
-#%%
+#%% Plot citation posterior predictive check.
 
 plt_df = extract_and_merge('citation_ppc')
 citation_ppc_df = extract_variable(summary_df, 'citation_ppc', axis='index')
@@ -250,27 +249,27 @@ data = {
 prior_check_fit = model.sample(data=data, chains=1, 
                                output_dir = output_dir / 'prior_check')
 
-#%%
+#%% Check diagnosis
 
 print(prior_check_fit.diagnose())
 
-#%%
+#%% Get draws and summary dataframes
 
 prior_check_draws_df = prior_check_fit.draws_pd()
 
 prior_check_summary_df = prior_check_fit.summary()
 
-#%%
+#%% Check citation distribution
 
 citation_ppc_df = extract_variable(prior_check_summary_df, 'citation_ppc', axis='index')
 plt.hist(citation_ppc_df['Mean'])
 
-#%%
+#%% Check value per paper distribution
 
 value_per_paper_df = extract_variable(prior_check_summary_df, 'value_per_paper', axis='index')
 plt.hist(value_per_paper_df['Mean'])
 
-#%%
+#%% Check value per paper against citation
 
 plt.plot(value_per_paper_df['Mean'],
          citation_ppc_df['Mean'],
@@ -278,12 +277,11 @@ plt.plot(value_per_paper_df['Mean'],
 plt.xlabel('Value')
 plt.ylabel('Citation')
 
-#%%
+#%% Check individual draws for a paper
 paper_id = 2
 plt.plot(prior_check_draws_df[f'citation_ppc[{paper_id}]'], 
          prior_check_draws_df[f'value_per_paper[{paper_id}]'], 
          '.')
 
-#%%
+#%% Check citations for a papper
 sns.kdeplot(prior_check_draws_df[f'citation_ppc[{paper_id}]'])
-# %%

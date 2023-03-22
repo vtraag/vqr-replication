@@ -3,17 +3,17 @@ import pandas as pd
 import numpy as np
 
 gev_names_df = pd.DataFrame(
-  [['1',  "Mathematics & Computer Sciences"],
-  ['2',   "Physics"],
-  ['3',   "Chemistry"],
-  ['4',   "Earth Sciences"],
-  ['5',   "Biology"],
-  ['6',   "Medicine"],
-  ['7',   "Agricultural & veterinary sciences"],
-  ['8b',  "Civil Engineering"],
-  ['9',   "Industrial & Information Engineering"],
-  ['11b', "Psychology"],
-  ['13',  "Economics & Statistics"]], columns=['GEV_id', 'GEV'])
+  [[ '1' ,  "Mathematics & Computer Sciences"],
+   [ '2' ,   "Physics"],
+   [ '3' ,   "Chemistry"],
+   [ '4' ,   "Earth Sciences"],
+   [ '5' ,   "Biology"],
+   [ '6' ,   "Medicine"],
+   [ '7' ,   "Agricultural & veterinary sciences"],
+   [ '8b',  "Civil Engineering"],
+   [ '9' ,   "Industrial & Information Engineering"],
+   ['11b', "Psychology"],
+   ['13' ,  "Economics & Statistics"]], columns=['GEV_id', 'GEV'])
 
 # Set directories
 root_dir = Path('..')

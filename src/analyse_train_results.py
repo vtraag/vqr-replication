@@ -20,7 +20,7 @@ metric_df = metric_df.sort_index()
 # Calculate the average review score
 metric_df['REV_SCORE'] = metric_df[['REV_1_SCORE', 'REV_2_SCORE']].mean(axis=1)
 
-#%%
+#%% Plot figures
 
 prediction_type = 'review'
 
@@ -301,11 +301,11 @@ for citation_score, citation_score_title in citation_scores.items():
   plt.savefig(output_dir / 'review_score_paper_value.pdf', bbox_inches='tight')
   plt.close()
 
-#%%
+#%% Set output directory
 
 output_dir = results_dir / 'figures'
 
-#%%
+#%% Create figure with all beta parameters for all GEV simultaneously
 
 all_beta_df = pd.concat(beta_dfs)
 
@@ -340,7 +340,7 @@ sns.move_legend(g, "upper right")
 plt.savefig(output_dir / 'beta.pdf', bbox_inches='tight')
 plt.close()  
 
-#%%
+#%% Create figure with all sigma parameters for all GEV simultaneously
 
 all_sigma_df = pd.concat(sigma_dfs)
 
