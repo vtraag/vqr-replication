@@ -16,9 +16,10 @@ gev_names_df = pd.DataFrame(
   ['13',  "Economics & Statistics"]], columns=['GEV_id', 'GEV'])
 
 # Set directories
-data_dir = Path('data')
-results_dir = Path('results')
-figure_dir = Path('figures')
+root_dir = Path('..')
+data_dir = root_dir / 'data'
+results_dir = root_dir / 'results'
+figure_dir = root_dir / 'figures'
 
 # Create directories if they do not yet exist
 for dir in [data_dir, results_dir, figure_dir]:
