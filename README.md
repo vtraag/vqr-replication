@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/617341653.svg)](https://zenodo.org/badge/latestdoi/617341653)
+
 # Introduction
 
 This repository contains all material necessary to replicate the results in:
