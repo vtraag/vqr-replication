@@ -14,6 +14,8 @@ GEV_df = institution_df.groupby('GEV_id').sum()
 GEV_df = pd.merge(GEV_df, gev_names_df,
                   left_index=True, right_on='GEV_id')
 
+GEV_df = GEV_df.set_index('GEV_id').loc[gev_names_df['GEV_id'],:]
+
 #%% Plot missing publications
 
 sns.set_style('white')

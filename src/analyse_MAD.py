@@ -197,6 +197,7 @@ sns.set_palette('Set1')
 
 g = sns.catplot(plt_df,
             x='MAD', y='GEV', hue='variable',
+            order=gev_names_df['GEV'],
             kind='bar', palette='Set1',
             errorbar=('pi', 95), errwidth=0.5,
             height=5, aspect=1.2)
@@ -227,6 +228,7 @@ plt_df = (inst_MAD_df
 
 g = sns.catplot(plt_df,
             x='MAD', y='GEV', hue='variable',
+            order=gev_names_df['GEV'],
             kind='bar', palette='Set1',
             errorbar=('pi', 95), errwidth=0.5,
             height=5, aspect=1.2)
@@ -259,6 +261,7 @@ plt_df = (inst_MAPD_df
 
 g = sns.catplot(plt_df,
             x='MAPD', y='GEV', hue='variable',
+            order=gev_names_df['GEV'],
             kind='bar', palette='Set1',
             errorbar=('pi', 95), errwidth=0.5,
             height=5, aspect=1.2)
@@ -295,6 +298,7 @@ plt_df = (plt_df
 clip = [0,15]
 g = sns.catplot(plt_df,
             x='Abs. Diff.', y='GEV', hue='variable',
+            order=gev_names_df['GEV'],
             kind='violin', scale='width',
             cut=0, clip=clip,
             height=7, aspect=0.8)
@@ -333,6 +337,7 @@ plt_df = (inst_avg_abs_diff_df
 clip = [0,15]
 g = sns.catplot(plt_df,
             x='Abs. Diff.', y='GEV', hue='variable',
+            order=gev_names_df['GEV'],
             kind='violin', scale='width',
             cut=0, clip=clip,
             height=7, aspect=0.8)
